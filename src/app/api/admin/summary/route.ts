@@ -1,0 +1,4 @@
+import { NextRequest } from "next/server";
+import { requireAdmin, routeError } from "@/lib/server/auth";
+import { adminDb } from "@/lib/server/firebase-admin";
+export async function GET(req:NextRequest){try{await requireAdmin(req);const db=adminDb();const [users,wallets,transactions]=await Promise.all([db.collection('users').count().get(),db.collection('wallets').get(),db.collection('transactions').get()]);const ws=wallets.docs.reduce((n,d)=>n+(d.data().balanceMinor||0),0);const summary=transactions.docs.reduce((a,d)=>{const x=d.data();a.purchases+=x.retailPriceMinor||0;a.costs+=x.providerCostMinor||0;if(x.status==='successful')a.successful++;if(x.status==='failed')a.failed++;return a},{purchases:0,costs:0,successful:0,failed:0});return Response.json({totalUsers:users.data().count,totalWalletBalancesMinor:ws,...summary,revenueMinor:summary.purchases,grossProfitMinor:summary.purchases-summary.costs})}catch(e){return routeError(e)}}
