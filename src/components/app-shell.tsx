@@ -70,7 +70,13 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
       if (adminMode) router.replace("/login");
       return;
     }
-    return onAuthStateChanged(auth, async user => {
+    let settled = false;
+    const authTimeout = window.setTimeout(() => {
+      if (!settled) router.replace("/login?reason=session-timeout");
+    }, 6000);
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      settled = true;
+      window.clearTimeout(authTimeout);
       if (!user) {
         router.replace("/login");
         return;
@@ -80,7 +86,16 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
         catch { router.replace("/dashboard"); return; }
       }
       setReady(true);
+    }, () => {
+      settled = true;
+      window.clearTimeout(authTimeout);
+      router.replace("/login?reason=session-error");
     });
+    return () => {
+      settled = true;
+      window.clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, [router, adminMode]);
 
   useEffect(() => {
@@ -110,7 +125,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
         })}
       </nav>
       <div className="portal-sidebar-footer">
-        {!collapsed && <div className="portal-security-note"><Shield size={16} /><div><b>Protected workspace</b><small>Secure session active</small></div></div>}
+        {!collapsed && <Link href={adminMode ? "/admin/settings" : "/dashboard/profile"} className="portal-security-note"><UserRound size={16} /><div><b>{auth.currentUser?.displayName || "DMB user"}</b><small>{auth.currentUser?.email || "Secure account"}</small></div></Link>}
         <button onClick={logout} className="portal-logout" title={collapsed ? "Log out" : undefined}><LogOut size={17} /><span>Log out</span></button>
       </div>
       <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} className="portal-collapse">{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>
