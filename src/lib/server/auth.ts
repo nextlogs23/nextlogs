@@ -7,6 +7,7 @@ export async function requireUser(req:NextRequest):Promise<Principal>{
  if(!header?.startsWith('Bearer ')) throw Object.assign(new Error('Authentication required'),{status:401});
  const decoded=await adminAuth().verifyIdToken(header.slice(7),true);
  const profile=await adminDb().collection('users').doc(decoded.uid).get();
+ if(!profile.exists) throw Object.assign(new Error('User profile not found'),{status:403});
  if(profile.data()?.status==='suspended') throw Object.assign(new Error('Account suspended'),{status:403});
  return {uid:decoded.uid,email:decoded.email||'',role:profile.data()?.role==='admin'?'admin':'customer'};
 }

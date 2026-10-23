@@ -28,6 +28,8 @@ export function AdminLogin() {
     setBusy(true);
     const form = new FormData(event.currentTarget);
     try {
+      const health = await fetch("/api/admin/health", { cache: "no-store" });
+      if (!health.ok) throw new Error("ADMIN_SERVER_NOT_READY");
       await signInWithEmailAndPassword(auth, String(form.get("email")), String(form.get("password")));
       await api("/api/admin/summary");
       toast.success("Administrator access verified.");
@@ -35,9 +37,16 @@ export function AdminLogin() {
       router.refresh();
     } catch (loginError) {
       await signOut(auth).catch(() => undefined);
-      const message = loginError instanceof Error && loginError.message.includes("Administrator access required")
-        ? "This account is valid, but it is not authorized as an administrator."
-        : "Unable to verify administrator access. Check your credentials and admin role.";
+      const detail = loginError instanceof Error ? loginError.message : "";
+      const message = detail.includes("ADMIN_SERVER_NOT_READY")
+        ? "Firebase Admin is not configured correctly on Vercel. Check the service-account email and private key, then redeploy."
+        : detail.includes("User profile not found")
+          ? "Your Firebase login is valid, but its Firestore users document is missing. Create it using your Authentication UID."
+          : detail.includes("Administrator access required")
+            ? "This account is valid, but its Firestore role is not set to admin."
+            : detail.includes("auth/invalid-credential") || detail.includes("auth/wrong-password") || detail.includes("auth/user-not-found")
+              ? "The administrator email or password is incorrect."
+              : "The administrator verification service could not complete. Please try again.";
       setError(message);
       toast.error(message);
     } finally {
