@@ -1,2 +1,2 @@
-import { DashboardHome } from "@/components/dashboard/dashboard-home";
-export default function Page(){return <DashboardHome/>}
+import { CustomerWorkspace } from "@/components/dashboard/workspace";
+export default function Page(){return <CustomerWorkspace section="services"/>}

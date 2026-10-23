@@ -1,13 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
+  Activity,
   Bell,
   Bolt,
   ChartNoAxesCombined,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   CreditCard,
   Gauge,
@@ -16,6 +21,7 @@ import {
   Menu,
   MessageSquareText,
   PhoneCall,
+  Search,
   Settings,
   Shield,
   Smartphone,
@@ -27,39 +33,37 @@ import {
 import { auth, firebaseConfigured } from "@/lib/firebase/client";
 import { api } from "@/lib/api-client";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-const customer = [
-  ["Dashboard", "", Gauge],
-  ["Verification", "sms", Shield],
-  ["Fund wallet", "wallet", WalletCards],
-  ["Services", "services", Grid2X2],
-  ["Transactions", "transactions", CreditCard],
-  ["Profile", "profile", UserRound],
-  ["Support", "support", CircleHelp],
-] as const;
+type NavItem = readonly [string, string, typeof Gauge];
 
-const primaryCustomer = customer.slice(0, 5);
+const customerNav: NavItem[] = [
+  ["Overview", "", Gauge], ["SMS verification", "sms", Shield], ["Buy airtime", "airtime", PhoneCall],
+  ["Buy data", "data", Smartphone], ["Electricity bills", "electricity", Bolt], ["Fund wallet", "wallet", WalletCards],
+  ["Transactions", "transactions", CreditCard], ["Notifications", "notifications", Bell], ["Profile", "profile", UserRound], ["Support", "support", CircleHelp],
+];
 
-const admin = [
-  ["Overview", "", Gauge],
-  ["Users", "users", Users],
-  ["SMS Orders", "sms-orders", MessageSquareText],
-  ["Airtime Orders", "airtime-orders", PhoneCall],
-  ["Data Orders", "data-orders", Smartphone],
-  ["Electricity", "electricity-orders", Bolt],
-  ["Wallet Transactions", "wallet-transactions", WalletCards],
-  ["API Providers", "providers", Shield],
-  ["Pricing Management", "pricing", Settings],
-  ["Revenue Analytics", "analytics", ChartNoAxesCombined],
-  ["Notifications", "notifications", Bell],
-  ["Settings", "settings", Settings],
-] as const;
+const adminNav: NavItem[] = [
+  ["Overview", "", Gauge], ["Users", "users", Users], ["SMS orders", "sms-orders", MessageSquareText],
+  ["Airtime orders", "airtime-orders", PhoneCall], ["Data orders", "data-orders", Smartphone], ["Electricity", "electricity-orders", Bolt],
+  ["Wallet activity", "wallet-transactions", WalletCards], ["API providers", "providers", Activity], ["Pricing", "pricing", Settings],
+  ["Analytics", "analytics", ChartNoAxesCombined], ["Notifications", "notifications", Bell], ["Settings", "settings", Settings],
+];
+
+function pathFor(adminMode: boolean, slug: string) {
+  return `${adminMode ? "/admin" : "/dashboard"}${slug ? `/${slug}` : ""}`;
+}
 
 export function AppShell({ adminMode = false, children }: { adminMode?: boolean; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [ready, setReady] = useState(!firebaseConfigured && !adminMode);
   const path = usePathname();
   const router = useRouter();
+  const nav = adminMode ? adminNav : customerNav;
+  const current = useMemo(() => nav.find(([, slug]) => path === pathFor(adminMode, slug))?.[0] || (adminMode ? "Administration" : "Dashboard"), [path, nav, adminMode]);
 
   useEffect(() => {
     if (!firebaseConfigured) {
@@ -72,100 +76,72 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
         return;
       }
       if (adminMode) {
-        try {
-          await api("/api/admin/summary");
-        } catch {
-          router.replace("/dashboard");
-          return;
-        }
+        try { await api("/api/admin/summary"); }
+        catch { router.replace("/dashboard"); return; }
       }
       setReady(true);
     });
   }, [router, adminMode]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
 
   async function logout() {
     await signOut(auth);
     router.push("/login");
   }
 
-  if (!ready) {
-    return <div className="grid min-h-screen place-items-center bg-[#f6f8fb] text-sm font-semibold text-[#718096]">Securing your workspace…</div>;
-  }
+  if (!ready) return <div className="portal-loading"><span /><p>Securing your workspace…</p></div>;
 
-  if (!adminMode) {
-    return (
-      <div className="min-h-screen bg-[#f6f8fb] text-[#132a44]">
-        <header className="sticky top-0 z-40 border-b border-[#e1e8f0] bg-white/95 backdrop-blur-xl">
-          <div className="mx-auto flex h-[78px] max-w-[1320px] items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
-            <Brand />
-            <nav className="hidden items-center gap-1 lg:flex">
-              {primaryCustomer.map(([label, slug, Icon]) => {
-                const href = slug ? `/dashboard/${slug}` : "/dashboard";
-                const active = path === href;
-                return (
-                  <Link key={label} href={href} className={`flex h-11 items-center gap-2 rounded-xl px-3.5 text-[12px] font-extrabold transition ${active ? "bg-[#edf3fa] text-[#123f7d]" : "text-[#6d7f92] hover:bg-[#f5f7fa] hover:text-[#123f7d]"}`}>
-                    <Icon size={16} strokeWidth={2.2} />
-                    {label}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard/notifications" aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#e0e7ef] bg-white text-[#597086] transition hover:border-[#c8d5e2] hover:bg-[#f7f9fb]">
-                <Bell size={17} />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#a61940] ring-2 ring-white" />
-              </Link>
-              <Link href="/dashboard/profile" className="hidden h-10 items-center gap-2 rounded-xl border border-[#e0e7ef] bg-white px-2.5 pr-3 transition hover:border-[#c8d5e2] sm:flex">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#123f7d] text-[10px] font-black text-white">D</span>
-                <span className="text-[11px] font-extrabold text-[#2a4056]">My account</span>
-              </Link>
-              <button onClick={logout} aria-label="Log out" className="hidden h-10 w-10 place-items-center rounded-xl bg-[#123f7d] text-white shadow-[0_8px_18px_rgba(18,63,125,.16)] transition hover:bg-[#0d3266] md:grid">
-                <LogOut size={16} />
-              </button>
-              <button onClick={() => setOpen(!open)} aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-xl border border-[#e0e7ef] bg-white text-[#2a4056] lg:hidden">
-                {open ? <X size={19} /> : <Menu size={19} />}
-              </button>
-            </div>
-          </div>
-          {open && (
-            <nav className="border-t border-[#e6ecf2] bg-white px-4 py-4 shadow-[0_18px_35px_rgba(20,46,75,.08)] lg:hidden">
-              <div className="mx-auto grid max-w-[1320px] gap-1 sm:grid-cols-2">
-                {customer.map(([label, slug, Icon]) => {
-                  const href = slug ? `/dashboard/${slug}` : "/dashboard";
-                  const active = path === href;
-                  return (
-                    <Link key={label} href={href} onClick={() => setOpen(false)} className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold ${active ? "bg-[#edf3fa] text-[#123f7d]" : "text-[#63778b]"}`}>
-                      <Icon size={17} />
-                      {label}
-                    </Link>
-                  );
-                })}
-                <button onClick={logout} className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-bold text-[#a61940]"><LogOut size={17} /> Log out</button>
-              </div>
-            </nav>
-          )}
-        </header>
-        <main className="mx-auto max-w-[1320px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">{children}</main>
-        <footer className="py-10 text-center text-xs font-semibold text-[#95a2af]">© 2026 DMB Logs Portal · Secure digital services</footer>
+  const sidebar = (
+    <aside className={`portal-sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-mobile-open" : ""} ${adminMode ? "is-admin" : ""}`}>
+      <div className="portal-sidebar-brand">
+        {collapsed ? <Link href="/" aria-label="DMB Logs Portal"><Image src="/dmb-logins-logo.png" alt="" width={52} height={52} className="h-12 w-12 object-contain" /></Link> : <Brand light />}
+        <button onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="portal-mobile-close"><X size={18} /></button>
       </div>
-    );
-  }
+      <div className="portal-sidebar-label">{adminMode ? "Operations" : "Personal workspace"}</div>
+      <nav className="portal-sidebar-nav">
+        {nav.map(([label, slug, Icon]) => {
+          const href = pathFor(adminMode, slug);
+          const active = path === href;
+          return <Link key={label} href={href} onClick={() => setMobileOpen(false)} title={collapsed ? label : undefined} className={`portal-nav-link ${active ? "is-active" : ""}`}><Icon size={18} /><span>{label}</span>{active && !collapsed && <ChevronRight size={14} className="ml-auto" />}</Link>;
+        })}
+      </nav>
+      <div className="portal-sidebar-footer">
+        {!collapsed && <div className="portal-security-note"><Shield size={16} /><div><b>Protected workspace</b><small>Secure session active</small></div></div>}
+        <button onClick={logout} className="portal-logout" title={collapsed ? "Log out" : undefined}><LogOut size={17} /><span>Log out</span></button>
+      </div>
+      <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} className="portal-collapse">{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>
+    </aside>
+  );
 
   return (
-    <div className="min-h-screen bg-[#f7f6ff]">
-      <aside className={`fixed inset-y-0 left-0 z-40 w-[272px] bg-[#211b52] p-5 text-white transition-transform lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="flex items-center justify-between"><Brand light /><button className="lg:hidden" onClick={() => setOpen(false)}><X /></button></div>
-        <p className="mt-8 px-3 text-[10px] font-black uppercase tracking-[.18em] text-white/35">Administration</p>
-        <nav className="mt-3 space-y-1">
-          {admin.map(([label, slug, Icon]) => {
-            const href = slug ? `/admin/${slug}` : "/admin";
-            return <Link key={label} href={href} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold ${path === href ? "bg-[#6757e8] text-white" : "text-white/60 hover:bg-white/5 hover:text-white"}`}><Icon size={17} />{label}</Link>;
-          })}
-        </nav>
-      </aside>
-      <div className="lg:pl-[272px]">
-        <header className="flex h-20 items-center justify-between border-b border-[#e5e2f1] bg-white px-6"><button onClick={() => setOpen(true)} className="lg:hidden"><Menu /></button><b className="text-sm">DMB Logs Portal operations</b><button onClick={logout} className="btn-primary py-2.5 text-xs"><LogOut size={14} /> Log out</button></header>
-        <main className="p-5 md:p-8">{children}</main>
+    <div className={`portal-shell ${adminMode ? "portal-admin" : ""}`}>
+      <button className={`portal-backdrop ${mobileOpen ? "is-visible" : ""}`} onClick={() => setMobileOpen(false)} aria-label="Close navigation" />
+      {sidebar}
+      <div className={`portal-main ${collapsed ? "sidebar-collapsed" : ""}`}>
+        <header className="portal-topbar">
+          <div className="flex min-w-0 items-center gap-3">
+            <button onClick={() => setMobileOpen(true)} className="portal-mobile-menu" aria-label="Open navigation"><Menu size={19} /></button>
+            <div className="min-w-0"><p className="portal-topbar-kicker">{adminMode ? "Admin console" : "Customer portal"}</p><h1 className="truncate">{current}</h1></div>
+          </div>
+          <div className="portal-topbar-actions">
+            <label className="portal-search"><Search size={15} /><input placeholder="Search workspace" aria-label="Search workspace" /></label>
+            <ThemeToggle compact />
+            <div className="relative">
+              <button onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }} className="portal-icon-button" aria-label="Notifications"><Bell size={17} /><span /></button>
+              {notificationsOpen && <div className="portal-popover portal-notifications"><div className="portal-popover-head"><div><b>Notifications</b><p>Account and service updates</p></div><button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><div className="ui-empty min-h-[190px]"><span className="ui-empty-icon"><Bell size={20} /></span><b className="mt-4 text-sm">You&apos;re all caught up</b><p className="mt-2 text-xs text-[var(--muted)]">New updates will appear here.</p></div></div>}
+            </div>
+            <div className="relative">
+              <button onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }} className="portal-profile-button"><span>D</span><div><b>{auth.currentUser?.displayName || "DMB user"}</b><small>{adminMode ? "Administrator" : "Customer"}</small></div><ChevronDown size={14} /></button>
+              {profileOpen && <div className="portal-popover portal-profile-menu"><Link href={adminMode ? "/admin/settings" : "/dashboard/profile"} onClick={() => setProfileOpen(false)}><UserRound size={16} /> Profile & settings</Link><Link href={adminMode ? "/admin/notifications" : "/dashboard/support"} onClick={() => setProfileOpen(false)}><CircleHelp size={16} /> Help & support</Link><button onClick={logout}><LogOut size={16} /> Log out</button></div>}
+            </div>
+          </div>
+        </header>
+        <main className="portal-content">{children}</main>
+        {!adminMode && <nav className="portal-mobile-bottom">{customerNav.slice(0, 5).map(([label, slug, Icon]) => { const href = pathFor(false, slug); return <Link key={label} href={href} className={path === href ? "is-active" : ""}><Icon size={19} /><span>{label === "SMS verification" ? "SMS" : label.replace("Buy ", "")}</span></Link>; })}</nav>}
       </div>
     </div>
   );

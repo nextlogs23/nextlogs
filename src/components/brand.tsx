@@ -6,7 +6,7 @@ export function Brand({ light=false }: { light?: boolean }) {
     <Link
       href="/"
       aria-label="DMB Logs Portal home"
-      className={`group inline-flex items-center gap-2.5 rounded-2xl font-black tracking-[-.04em] text-lg sm:text-xl ${light ? "bg-white/95 py-1 pl-1 pr-3 text-[#14233b] shadow-[0_10px_30px_rgba(0,0,0,.12)]" : "text-[#14233b]"}`}
+      className={`group inline-flex items-center gap-2.5 rounded-2xl font-black tracking-[-.04em] text-lg sm:text-xl ${light ? "bg-white/95 py-1 pl-1 pr-3 text-[#14233b] shadow-[0_10px_30px_rgba(0,0,0,.12)]" : "text-[var(--ink)]"}`}
     >
       <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-[#dfe6ee]">
         <Image

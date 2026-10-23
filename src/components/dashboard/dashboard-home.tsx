@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
+  BarChart3,
   Bolt,
   CalendarDays,
   ChevronRight,
   CircleDollarSign,
+  Clock3,
   CreditCard,
   Headphones,
   History,
@@ -93,7 +95,16 @@ export function DashboardHome() {
   }, []);
 
   const successful = useMemo(() => transactions.filter(item => item.status?.toLowerCase() === "successful"), [transactions]);
+  const pending = useMemo(() => transactions.filter(item => ["pending", "processing"].includes(item.status?.toLowerCase() || "")), [transactions]);
   const spentMinor = useMemo(() => successful.reduce((sum, item) => sum + (item.retailPriceMinor ?? item.amountMinor ?? 0), 0), [successful]);
+  const activityByService = useMemo(() => {
+    const totals = new Map<string, number>();
+    transactions.forEach(item => {
+      const key = item.serviceType?.replaceAll("_", " ") || "Wallet";
+      totals.set(key, (totals.get(key) || 0) + (item.retailPriceMinor ?? item.amountMinor ?? 0));
+    });
+    return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [transactions]);
 
   return (
     <div className="dash-page">
@@ -123,10 +134,16 @@ export function DashboardHome() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric icon={ReceiptText} label="Total transactions" value={String(transactions.length)} detail="All recorded activity" loading={loading} />
         <Metric icon={BadgeCheck} label="Successful purchases" value={String(successful.length)} detail="Provider-confirmed services" loading={loading} />
+        <Metric icon={Clock3} label="Pending transactions" value={String(pending.length)} detail="Awaiting final provider status" loading={loading} />
         <Metric icon={CircleDollarSign} label="Total spent" value={money(spentMinor)} detail="Completed purchases only" loading={loading} />
+      </section>
+
+      <section className="dash-surface">
+        <div className="dash-section-heading"><div><p className="dash-eyebrow">Spending insight</p><h2>Service activity</h2><p>Built only from your recorded transactions.</p></div><span className="ui-badge ui-badge-success">Live ledger</span></div>
+        {activityByService.length ? <div className="dash-chart">{activityByService.map(([label, value]) => { const max = Math.max(...activityByService.map(([, total]) => total), 1); return <div key={label}><div><b className="capitalize">{label}</b><span>{money(value)}</span></div><span><i style={{ width: `${Math.max(6, (value / max) * 100)}%` }} /></span></div>; })}</div> : <div className="dash-chart-empty"><BarChart3 size={23} /><div><b>Your chart is ready</b><p>It will populate as real purchases are completed.</p></div></div>}
       </section>
 
       <section className="dash-surface">
