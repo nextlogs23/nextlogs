@@ -25,6 +25,15 @@ service cloud.firestore {
     match /walletFundingIntents/{id} { allow read, write: if false; }
     match /transactions/{id} { allow read, write: if false; }
     match /smsOrders/{id} { allow read, write: if false; }
+    match /telnyxSearchOffers/{id} { allow read, write: if false; }
+    match /telnyxOrders/{id} { allow read, write: if false; }
+    match /purchasedNumbers/{id} { allow read, write: if false; }
+    match /inboundMessages/{id} { allow read, write: if false; }
+    match /telnyxWebhookEvents/{id} { allow read, write: if false; }
+    match /smsPoolOffers/{id} { allow read, write: if false; }
+    match /smsPoolOrders/{id} { allow read, write: if false; }
+    match /smsPoolRentalOffers/{id} { allow read, write: if false; }
+    match /smsPoolRentals/{id} { allow read, write: if false; }
     match /airtimeOrders/{id} { allow read, write: if false; }
     match /dataOrders/{id} { allow read, write: if false; }
     match /electricityOrders/{id} { allow read, write: if false; }
