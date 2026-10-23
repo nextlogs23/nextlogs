@@ -146,3 +146,108 @@ html.dark .portal-sidebar{background:linear-gradient(180deg,#122338,#102033)}htm
 @media(max-width:1000px){.admin-login-shell{grid-template-columns:minmax(390px,.9fr) minmax(470px,1.1fr)}.admin-login-visual{padding:36px}.admin-login-visual-copy h1{font-size:3.6rem}.admin-login-assurances{grid-template-columns:1fr}}
 @media(max-width:820px){.admin-login-shell{display:block}.admin-login-visual{display:none}.admin-login-panel{min-height:100vh;padding:91px 18px 35px}.admin-login-toolbar{left:18px;right:18px;top:20px}.admin-login-mobile-brand{display:block;margin-bottom:23px}.admin-login-card{padding:31px 25px 27px}}
 @media(max-width:430px){.admin-login-panel{align-items:flex-start}.admin-login-card{border-radius:19px;padding:27px 20px 23px}.admin-login-card h2{font-size:2rem}.admin-login-card form label>span,.admin-login-submit{height:49px}}
+
+/* Dark theme contrast and legibility pass */
+html.dark{
+  --ink:#f2f7fc;
+  --muted:#b5c2cf;
+  --line:#34495d;
+  --cream:#09131e;
+  --card:#111f2d;
+  --surface:#111f2d;
+  --surface-soft:#182a3b;
+  --brand:#82bdf4;
+  --brand-strong:#a5d2fb;
+  --accent:#f08aa7;
+  --accent-soft:#3b202c;
+  --shadow:0 18px 48px rgba(0,0,0,.3);
+}
+html.dark body{background:#09131e;color:var(--ink)}
+html.dark input::placeholder,html.dark textarea::placeholder{color:#8193a5;opacity:1}
+html.dark select,html.dark option{background:#182a3b;color:#f2f7fc}
+html.dark .ui-input,html.dark .country-search,html.dark .portal-search,html.dark .admin3-table-toolbar label,html.dark .admin3-form-grid input,html.dark .admin3-form-grid select,html.dark .admin3-settings input,html.dark .admin3-settings textarea{border-color:#34495d;background:#172838;color:#f2f7fc}
+html.dark .ui-input:focus,html.dark .country-search:focus-within,html.dark .portal-search:focus-within{border-color:#67aceb;background:#1a2e41;box-shadow:0 0 0 4px rgba(103,172,235,.14)}
+html.dark .ui-button-secondary,html.dark .admin3-button.secondary,html.dark .admin-login-customer{border-color:#3a5167;background:#172838;color:#e9f2fa}
+html.dark .ui-button-secondary:hover:not(:disabled),html.dark .admin3-button.secondary:hover,html.dark .admin-login-customer:hover{border-color:#6198ca;background:#20374b;color:#a9d5fb}
+html.dark button:disabled{color:#8494a4}
+
+html.dark .mk-nav{background:rgba(12,24,36,.92);box-shadow:0 8px 30px rgba(0,0,0,.16)}
+html.dark .mk-nav-links,html.dark .mk-login{color:#bdc9d5}
+html.dark .mk-nav-links a:hover,html.dark .mk-login:hover{color:#91c9fb}
+html.dark .mk-hero-copy>p,html.dark .mk-section-heading>div>p:last-child,html.dark .mk-faq-layout>div>p:last-child{color:#b7c5d2}
+html.dark .mk-trust{color:#b8c6d3}
+html.dark .mk-secondary{border-color:#3a5065;background:#172838;color:#eff6fc}
+html.dark .mk-secondary:hover{border-color:#67a3d8;background:#20364a;color:#a9d7ff}
+html.dark .mk-logo-strip{background:#0e1b28}
+html.dark .mk-logo-strip p,html.dark .mk-logo-strip .mk-logo-brand{color:#aebdca}
+html.dark .mk-logo-strip .mk-logo-brand:hover{color:#f5f9fd}
+html.dark .mk-logo-strip .mk-logo-brand>span{border-color:#354b60;background:#f5f8fb;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+html.dark .mk-service p,html.dark .mk-steps p,html.dark .mk-faq-layout details p{color:#adbdcb}
+html.dark .mk-service>small,html.dark .mk-steps article>span{color:#93a6b8}
+html.dark .mk-faq-layout details{border-color:#34495d}
+html.dark .mk-faq-layout summary{color:#edf5fb}
+html.dark .mk-faq-layout details:hover{background:#172838}
+html.dark .mk-service>span,html.dark .mk-steps article>div{background:#1b3950;color:#8bcbf5;box-shadow:inset 0 0 0 1px rgba(122,190,236,.12)}
+html.dark .mk-phone{border-color:#dbe5ed;background:#eef3f7;color:#10233f}
+
+html.dark .portal-topbar{background:rgba(13,27,40,.93);border-color:#2d4256}
+html.dark .portal-topbar-kicker,html.dark .ui-eyebrow{color:#f19ab2}
+html.dark .portal-icon-button,html.dark .theme-toggle,html.dark .portal-profile-button,html.dark .portal-collapse,html.dark .portal-mobile-menu{border-color:#34495d;background:#172838;color:#b8c7d4}
+html.dark .portal-icon-button:hover,html.dark .theme-toggle:hover,html.dark .portal-profile-button:hover{border-color:#5f94c2;background:#20364a;color:#9fd0fb}
+html.dark .portal-popover{border-color:#34495d;background:#122334;box-shadow:0 28px 75px rgba(0,0,0,.42)}
+html.dark .portal-profile-menu a,html.dark .portal-profile-menu button{color:#b9c6d2}
+html.dark .portal-profile-menu a:hover,html.dark .portal-profile-menu button:hover{background:#1b3043;color:#f4f8fb}
+html.dark .portal-mobile-bottom{border-color:#34495d;background:rgba(17,31,45,.95)}
+
+html.dark .dash2-greeting p,html.dark .dash2-stat p,html.dark .dash2-service p,html.dark .dash2-panel-head p,html.dark .dash2-list p,html.dark .dash2-empty p{color:#aebdca}
+html.dark .dash2-date,html.dark .dash2-stat-top small{color:#9dafbf}
+html.dark .dash2-stat:hover,html.dark .dash2-service:hover{border-color:#4d6c88;background:#172b3e;box-shadow:0 16px 35px rgba(0,0,0,.2)}
+html.dark .dash2-stat-top>span,html.dark .dash2-service>span,html.dark .dash2-transaction-icon,html.dark .dash2-empty>span{background:#1b3a53;color:#8dcbf8}
+html.dark .dash2-service>span.sky,html.dark .dash2-service>span.blue{background:#1b3a53;color:#8dcbf8}
+html.dark .dash2-service>span.cyan{background:#163d3f;color:#73d9d0}
+html.dark .dash2-service>span.amber{background:#3c301a;color:#f0c26d}
+html.dark .dash2-service>svg{color:#8195a7}
+html.dark .dash2-bars em{background:#24384b}
+html.dark .dash2-live,html.dark .ui-badge-success,html.dark .dash2-status.success{background:#173a2d;color:#7de0b3}
+html.dark .dash2-status.pending,html.dark .ui-badge-warning{background:#3c301a;color:#f0c26d}
+html.dark .dash2-status.danger,html.dark .ui-badge-danger{background:#40232e;color:#f5a0b6}
+html.dark .dash2-status.info{background:#1b3a53;color:#8dcbf8}
+
+html.dark .workspace-card-title p,html.dark .country-grid button small,html.dark .sms-service-grid button small,html.dark .plan-grid button small,html.dark .empty-state p{color:#aebdca}
+html.dark .country-grid button,html.dark .sms-service-grid button,html.dark .network-card,html.dark .plan-grid button,html.dark .amount-options button{border-color:#34495d;background:#172838;color:#edf5fb}
+html.dark .country-grid button:hover:not(.is-selected),html.dark .sms-service-grid button:hover:not(.is-selected),html.dark .network-card:hover:not(.is-selected),html.dark .plan-grid button:hover:not(.is-selected),html.dark .amount-options button:hover:not(.is-selected){border-color:#5b91be;background:#20374b;color:#fff}
+html.dark .compliance-note,html.dark .purchase-safety{color:#b6c8d7}
+html.dark .modal-backdrop{background:rgba(2,8,14,.76)}
+html.dark .confirm-modal{border-color:#3a5065;background:#122334;color:#f2f7fc;box-shadow:0 30px 90px rgba(0,0,0,.5)}
+
+html.dark .auth2-panel,html.dark .admin-login-panel{background:radial-gradient(circle at 100% 0%,rgba(71,157,224,.1),transparent 30%),#0b1723}
+html.dark .auth2-card,html.dark .admin-login-card{border-color:#38516a;background:rgba(17,31,45,.96)}
+html.dark .auth2-description,html.dark .auth2-switch,html.dark .auth2-trust,html.dark .auth2-legal,html.dark .admin-login-card>p,html.dark .admin-login-security,html.dark .admin-login-separator{color:#b3c1ce!important}
+html.dark .auth2-field,html.dark .admin-login-card form label>span{border-color:#34495d;background:#172838;color:#9fb0bf}
+html.dark .auth2-field:focus-within,html.dark .admin-login-card form label>span:focus-within{border-color:#61a8e6;background:#1b2f42;box-shadow:0 0 0 4px rgba(97,168,230,.13)}
+html.dark .auth2-field input::placeholder,html.dark .admin-login-card input::placeholder{color:#8496a7}
+html.dark .admin-login-badge,html.dark .auth2-eyebrow{border-color:#36546d;background:#183149;color:#8dcaf5}
+html.dark .admin-login-card code{background:#1b3043;color:#9dd2f6}
+
+html.dark .portal-admin .portal-topbar{border-color:#31475b;background:rgba(12,25,38,.94)}
+html.dark .admin3-metric,html.dark .admin3-card,html.dark .admin3-provider-card{border-color:#34495d;background:#111f2d;box-shadow:0 12px 34px rgba(0,0,0,.2)}
+html.dark .admin3-metric:hover,html.dark .admin3-provider-card:hover{border-color:#527493}
+html.dark .admin3-metric-top small,html.dark .admin3-heading>div>p,html.dark .admin3-card-head p,html.dark .admin3-provider-list p small,html.dark .admin3-provider-card p,html.dark .admin3-settings-head p{color:#aebdca}
+html.dark .admin3-metric-top>span,html.dark .admin3-provider-list>div>span,html.dark .admin3-provider-card>div>span,html.dark .admin3-empty>span,html.dark .admin3-settings-head>span{background:#1b3a53;color:#8dcbf8}
+html.dark .admin3-metric.cyan .admin3-metric-top>span{background:#163d43;color:#77d6df}
+html.dark .admin3-metric.green .admin3-metric-top>span{background:#173a2d;color:#7de0b3}
+html.dark .admin3-metric.indigo .admin3-metric-top>span{background:#292d51;color:#afb7ff}
+html.dark .admin3-metric.amber .admin3-metric-top>span{background:#3c301a;color:#f0c26d}
+html.dark .admin3-metric.rose .admin3-metric-top>span{background:#40232e;color:#f5a0b6}
+html.dark .admin3-live{background:#173a2d;color:#7de0b3}
+html.dark .admin3-provider-card em,html.dark .admin3-provider-list em{background:#3c301a;color:#f0c26d}
+html.dark .admin3-security-note{border-color:#31546a;background:#143044;color:#8dcff4}
+html.dark .admin3-security-note p{color:#b4c8d6}
+html.dark .admin3-table-scroll th{background:#172838;color:#adbdca}
+html.dark .admin3-skeleton,html.dark .dash2-skeleton{background:linear-gradient(90deg,#1a2c3e,#24394c,#1a2c3e);background-size:200% 100%}
+
+html.dark .mobile-menu-panel{background:linear-gradient(180deg,#111f2d,#0c1824)}
+html.dark .mobile-menu-link:hover{border-color:#45637d;background:#1b3043;color:#9fd2fb}
+html.dark .mobile-menu-panel .bg-\[\#f1effb\],html.dark .mobile-menu-panel .bg-\[\#f0edff\]{background:#1b3043!important}
+html.dark .mobile-menu-panel .text-\[\#6757e8\]{color:#94ccf8!important}
+html.dark [data-sonner-toast]{border-color:#3a5065!important;background:#122334!important;color:#eef5fb!important;box-shadow:0 18px 50px rgba(0,0,0,.38)!important}
