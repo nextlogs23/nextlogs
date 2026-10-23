@@ -55,48 +55,53 @@ function pathFor(adminMode: boolean, slug: string) {
 }
 
 export function AppShell({ adminMode = false, children }: { adminMode?: boolean; children: ReactNode }) {
+  const path = usePathname();
+  const adminLoginRoute = adminMode && path === "/admin/login";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [ready, setReady] = useState(!firebaseConfigured && !adminMode);
-  const path = usePathname();
+  const [ready, setReady] = useState(adminLoginRoute || (!firebaseConfigured && !adminMode));
   const router = useRouter();
   const nav = adminMode ? adminNav : customerNav;
   const current = useMemo(() => nav.find(([, slug]) => path === pathFor(adminMode, slug))?.[0] || (adminMode ? "Administration" : "Dashboard"), [path, nav, adminMode]);
 
   useEffect(() => {
+    if (adminLoginRoute) {
+      setReady(true);
+      return;
+    }
     if (!firebaseConfigured) {
-      if (adminMode) router.replace("/login");
+      if (adminMode) router.replace("/admin/login?reason=not-configured");
       return;
     }
     let settled = false;
     const authTimeout = window.setTimeout(() => {
-      if (!settled) router.replace("/login?reason=session-timeout");
+      if (!settled) router.replace(adminMode ? "/admin/login?reason=session-timeout" : "/login?reason=session-timeout");
     }, 6000);
     const unsubscribe = onAuthStateChanged(auth, async user => {
       settled = true;
       window.clearTimeout(authTimeout);
       if (!user) {
-        router.replace("/login");
+        router.replace(adminMode ? "/admin/login" : "/login");
         return;
       }
       if (adminMode) {
         try { await api("/api/admin/summary"); }
-        catch { router.replace("/dashboard"); return; }
+        catch { router.replace("/admin/login?reason=unauthorized"); return; }
       }
       setReady(true);
     }, () => {
       settled = true;
       window.clearTimeout(authTimeout);
-      router.replace("/login?reason=session-error");
+      router.replace(adminMode ? "/admin/login?reason=session-error" : "/login?reason=session-error");
     });
     return () => {
       settled = true;
       window.clearTimeout(authTimeout);
       unsubscribe();
     };
-  }, [router, adminMode]);
+  }, [router, adminMode, adminLoginRoute]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -109,6 +114,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
   }
 
   if (!ready) return <div className="portal-loading"><span /><p>Securing your workspace…</p></div>;
+  if (adminLoginRoute) return <>{children}</>;
 
   const sidebar = (
     <aside className={`portal-sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-mobile-open" : ""} ${adminMode ? "is-admin" : ""}`}>
@@ -143,7 +149,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
             <div className="min-w-0"><p className="portal-topbar-kicker">{adminMode ? "Admin console" : "Customer portal"}</p><h1 className="truncate">{current}</h1></div>
           </div>
           <div className="portal-topbar-actions">
-            <label className="portal-search"><Search size={15} /><input placeholder="Search workspace" aria-label="Search workspace" /></label>
+            <label className="portal-search"><Search size={15} /><input placeholder={adminMode ? "Search admin records" : "Search workspace"} aria-label={adminMode ? "Search admin records" : "Search workspace"} /></label>
             <ThemeToggle compact />
             <div className="relative">
               <button onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }} className="portal-icon-button" aria-label="Notifications"><Bell size={17} /><span /></button>
