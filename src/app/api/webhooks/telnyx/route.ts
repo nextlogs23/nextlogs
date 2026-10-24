@@ -1,7 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { telnyxClient } from "@/lib/server/telnyx";
-import { applyWalletEntry } from "@/lib/server/wallet";
+import { finalizePurchaseRefund } from "@/lib/server/wallet";
 
 type TelnyxEvent = { data?: { id?: string; event_type?: string; occurred_at?: string; payload?: Record<string, unknown> } };
 const textValue = (value: unknown) => typeof value === "string" ? value : "";
@@ -46,12 +46,12 @@ export async function POST(request: Request) {
     if (reference) {
       const orderSnapshot = await db.collection("telnyxOrders").doc(reference).get(); const order = orderSnapshot.data();
       if (status === "failed" && order?.userId && Number.isSafeInteger(order.retailPriceMinor) && order.retailPriceMinor > 0) {
-        await applyWalletEntry({ uid: order.userId, reference: `${reference}-REFUND`, amountMinor: order.retailPriceMinor, kind: "refund", description: "Telnyx order failure refund", providerReference: textValue(payload.id) || reference });
+        await finalizePurchaseRefund({ uid: order.userId, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: order.retailPriceMinor, description: "Telnyx order failure refund", providerReference: textValue(payload.id) || reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { providerStatus } });
       }
       await Promise.all([
         db.collection("telnyxOrders").doc(reference).set({ status, providerStatus, updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
         db.collection("purchasedNumbers").doc(reference).set({ status, updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
-        db.collection("transactions").doc(reference).set({ status: status === "active" ? "successful" : status === "failed" ? "refunded" : "processing", updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
+        ...(status === "failed" ? [] : [db.collection("transactions").doc(reference).set({ status: status === "active" ? "successful" : "processing", updatedAt: FieldValue.serverTimestamp() }, { merge: true })]),
       ]);
     }
   }

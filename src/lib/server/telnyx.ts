@@ -87,5 +87,10 @@ export function normalizeTelnyxError(error: unknown) {
   const message = status === 409
     ? "The selected number is no longer available. Search again and choose another number."
     : "Telnyx could not complete this request. Please try again later.";
-  return Object.assign(new Error(message), { status, providerStatus, cause: candidate.message || candidate.error?.message });
+  return Object.assign(new Error(message), {
+    status,
+    providerStatus,
+    outcomeKnown: typeof providerStatus === "number" && providerStatus >= 400 && providerStatus < 500,
+    cause: candidate.message || candidate.error?.message,
+  });
 }

@@ -10,7 +10,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:smspool": "node --test tests/smspool-readiness.test.mjs"
+    "test:smspool": "node --test tests/smspool-readiness.test.mjs",
+    "test:telnyx": "node --test tests/telnyx-readiness.test.mjs"
   },
   "dependencies": {
     "firebase": "^12.16.0",
