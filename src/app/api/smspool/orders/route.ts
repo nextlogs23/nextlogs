@@ -5,7 +5,7 @@ import { requireUser, routeError } from "@/lib/server/auth";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { enforceRateLimit } from "@/lib/server/rate-limit";
 import { purchaseSmsPoolNumber, smsPoolPurchasesEnabled, stableSmsPoolReference, SmsPoolError } from "@/lib/server/smspool";
-import { applyWalletEntry, reservePurchase } from "@/lib/server/wallet";
+import { finalizePurchaseRefund, reservePurchase } from "@/lib/server/wallet";
 
 const schema = z.object({ offerId: z.string().uuid(), idempotencyKey: z.string().min(16).max(100) });
 const iso = (value: unknown) => value instanceof Timestamp ? value.toDate().toISOString() : value && typeof value === "object" && "toDate" in value ? (value as { toDate(): Date }).toDate().toISOString() : typeof value === "string" ? value : null;
@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
     if (!offerSnapshot.exists || offer?.userId !== user.uid) throw Object.assign(new Error("This SMSPool offer is not available to your account"), { status: 404 });
     if ((offer.expiresAt?.toMillis?.() || 0) <= Date.now()) throw Object.assign(new Error("This SMSPool offer expired. Refresh pricing and availability."), { status: 409 });
     retailPriceMinor = offer.retailPriceMinor;
-    await reservePurchase({ uid: user.uid, reference, amountMinor: retailPriceMinor, service: "smspool_sms", metadata: { offerId: input.offerId, countryId: offer.countryId, serviceId: offer.serviceId, poolId: offer.poolId } });
-    await db.collection("smsPoolOrders").doc(reference).create({ reference, userId: user.uid, offerId: input.offerId, countryId: offer.countryId, serviceId: offer.serviceId, poolId: offer.poolId, poolName: offer.poolName, status: "processing", retailPriceMinor, providerCostMinor: offer.providerCostMinor, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    const reservation = await reservePurchase({ uid: user.uid, reference, amountMinor: retailPriceMinor, service: "smspool_sms", metadata: { offerId: input.offerId, countryId: offer.countryId, serviceId: offer.serviceId, poolId: offer.poolId }, providerOrder: { collection: "smsPoolOrders", data: { userId: user.uid, offerId: input.offerId, countryId: offer.countryId, serviceId: offer.serviceId, poolId: offer.poolId, poolName: offer.poolName, status: "processing", retailPriceMinor, providerCostMinor: offer.providerCostMinor, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() } } });
+    if (reservation.idempotent) { const order = (await db.collection("smsPoolOrders").doc(reference).get()).data(); return Response.json({ reference, number: order?.phoneNumber || null, status: order?.status || "processing", idempotent: true }); }
     const result = await purchaseSmsPoolNumber({ countryId: offer.countryId, serviceId: offer.serviceId, poolId: offer.poolId, maxPriceUsd: offer.providerPriceUsd });
     if (!result.order_id || !result.phonenumber) throw new SmsPoolError("SMSPool returned an incomplete order", 502, 200, "INCOMPLETE_RESPONSE", false);
     const expiresAt = result.expiration ? Timestamp.fromMillis(result.expiration * 1000) : Timestamp.fromMillis(Date.now() + Number(result.expires_in || 1200) * 1000);
@@ -41,8 +41,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) return routeError(Object.assign(new Error("Invalid SMSPool purchase request"), { status: 400 }));
     if (reference && userId && retailPriceMinor && error instanceof SmsPoolError && error.outcomeKnown) {
-      const db = adminDb(); await applyWalletEntry({ uid: userId, reference: `${reference}-REFUND`, amountMinor: retailPriceMinor, kind: "refund", description: "SMSPool order failure refund", providerReference: reference });
-      await Promise.all([db.collection("smsPoolOrders").doc(reference).set({ status: "failed", providerErrorType: error.providerType || null, updatedAt: FieldValue.serverTimestamp() }, { merge: true }), db.collection("transactions").doc(reference).set({ status: "refunded", updatedAt: FieldValue.serverTimestamp() }, { merge: true })]);
+      await finalizePurchaseRefund({ uid: userId, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: retailPriceMinor, description: "SMSPool order failure refund", providerReference: reference, providerOrderCollection: "smsPoolOrders", providerOrderStatus: "failed", providerOrderUpdates: { providerErrorType: error.providerType || null } });
     }
     return routeError(error);
   }
