@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Menu, X } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, CircleHelp, Layers3, Menu, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const links = [
-  ["Services", "#services"],
-  ["How it works", "#how"],
-  ["Security", "#security"],
-  ["FAQ", "#faq"],
+  ["Services", "Everything available in one place", "#services", Layers3],
+  ["How it works", "A simple four-step process", "#how", Sparkles],
+  ["Security", "How your payments stay protected", "#security", ShieldCheck],
+  ["FAQs", "Quick answers before you begin", "#faq", CircleHelp],
 ] as const;
 
 export function MobileNav() {
@@ -16,17 +18,20 @@ export function MobileNav() {
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", closeOnEscape); };
   }, [open]);
 
   return <>
-    <button onClick={() => setOpen(true)} className="mobile-menu-trigger md:hidden" aria-label="Open navigation" aria-expanded={open}><Menu size={21}/></button>
+    <button onClick={() => setOpen(true)} className="mobile-menu-trigger md:hidden" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-navigation"><Menu size={20}/></button>
     <div className={`mobile-menu ${open ? "is-open" : ""}`} aria-hidden={!open}>
       <button className="mobile-menu-backdrop" aria-label="Close navigation" onClick={() => setOpen(false)}/>
-      <aside className="mobile-menu-panel">
-        <div className="flex items-center justify-between border-b border-[#e7e3f4] pb-5"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#6757e8]">DMB Logs Portal</p><p className="mt-1 text-xs text-[#85829a]">Digital services, simplified.</p></div><button onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl bg-[#f1effb]" aria-label="Close navigation"><X size={18}/></button></div>
-        <nav className="mt-6 grid gap-2">{links.map(([label, href], index) => <a key={href} href={href} onClick={() => setOpen(false)} className="mobile-menu-link"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#f0edff] text-[10px] font-black text-[#6757e8]">0{index + 1}</span><b>{label}</b><ArrowRight className="ml-auto" size={15}/></a>)}</nav>
-        <div className="mt-auto grid gap-3 pt-8"><Link onClick={() => setOpen(false)} href="/register" className="btn-primary w-full">Create account <ArrowRight size={15}/></Link><Link onClick={() => setOpen(false)} href="/login" className="rounded-xl border border-[#dfdced] py-3 text-center text-sm font-black">Log in</Link></div>
+      <aside id="mobile-navigation" className="mobile-menu-panel" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+        <div className="mobile-menu-head"><Link href="/" className="mobile-menu-brand" onClick={() => setOpen(false)}><span><Image src="/dmb-logins-logo.png" alt="" width={64} height={64} /></span><div><b>DMB Logs Portal</b><small>Digital services, simplified</small></div></Link><button onClick={() => setOpen(false)} className="mobile-menu-close" aria-label="Close navigation"><X size={18}/></button></div>
+        <div className="mobile-menu-intro"><span>Explore</span><p>Move through the platform quickly and securely.</p></div>
+        <nav className="mobile-menu-links">{links.map(([label, copy, href, Icon]) => <a key={href} href={href} onClick={() => setOpen(false)} className="mobile-menu-link"><span><Icon size={18}/></span><div><b>{label}</b><small>{copy}</small></div><ArrowRight className="mobile-menu-arrow" size={16}/></a>)}</nav>
+        <div className="mobile-menu-footer"><div className="mobile-menu-theme"><div><b>Appearance</b><small>Choose light or dark mode</small></div><ThemeToggle compact /></div><div className="mobile-menu-actions"><Link onClick={() => setOpen(false)} href="/login" className="mobile-menu-login">Log in</Link><Link onClick={() => setOpen(false)} href="/register" className="mk-primary">Create account <ArrowRight size={15}/></Link></div><p>Secure payments · Provider-confirmed delivery</p></div>
       </aside>
     </div>
   </>;
