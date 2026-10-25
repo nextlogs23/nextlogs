@@ -43,7 +43,7 @@ export function AdminLogin() {
         : detail.includes("User profile not found")
           ? "Your Firebase login is valid, but its Firestore users document is missing. Create it using your Authentication UID."
           : detail.includes("Administrator access required")
-            ? "This account is valid, but its Firestore role is not set to admin."
+            ? detail
             : detail.includes("auth/invalid-credential") || detail.includes("auth/wrong-password") || detail.includes("auth/user-not-found")
               ? "The administrator email or password is incorrect."
               : "The administrator verification service could not complete. Please try again.";
