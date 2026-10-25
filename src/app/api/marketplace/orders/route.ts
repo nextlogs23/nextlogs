@@ -8,13 +8,18 @@ import { enforceRateLimit } from "@/lib/server/rate-limit";
 
 const purchaseSchema = z.object({ productId: z.string().min(1).max(120), idempotencyKey: z.string().min(16).max(100) });
 const iso = (value: unknown) => value instanceof Timestamp ? value.toDate().toISOString() : value && typeof value === "object" && "toDate" in value ? (value as { toDate(): Date }).toDate().toISOString() : null;
+const millis = (value: unknown) => value instanceof Timestamp ? value.toMillis() : value && typeof value === "object" && "toMillis" in value ? (value as { toMillis(): number }).toMillis() : 0;
 function publicOrder(id: string, data: Record<string, unknown>) { return { id, reference: data.reference, productId: data.productId, title: data.title, category: data.category, kind: data.kind, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, deliveryUrl: data.status === "successful" || data.status === "completed" ? data.deliveryUrl || null : null, createdAt: iso(data.createdAt) }; }
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireUser(request);
-    const snapshot = await adminDb().collection("marketplaceOrders").where("userId", "==", user.uid).orderBy("createdAt", "desc").limit(50).get();
-    return Response.json({ orders: snapshot.docs.map((doc) => publicOrder(doc.id, doc.data())) });
+    // Keep the customer view available while the production composite index is
+    // being created. The user equality filter uses Firestore's built-in index;
+    // the bounded result is then sorted securely on the server.
+    const snapshot = await adminDb().collection("marketplaceOrders").where("userId", "==", user.uid).limit(100).get();
+    const orders = snapshot.docs.sort((a, b) => millis(b.data().createdAt) - millis(a.data().createdAt)).slice(0, 50).map((doc) => publicOrder(doc.id, doc.data()));
+    return Response.json({ orders });
   } catch (error) { return routeError(error); }
 }
 

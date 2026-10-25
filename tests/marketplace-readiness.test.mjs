@@ -35,6 +35,14 @@ test("duplicate marketplace purchases use a stable reference", () => {
   assert.match(route, /idempotent: true/);
 });
 
+test("customer order history works before the composite index finishes deploying", () => {
+  const route = read("src/app/api/marketplace/orders/route.ts");
+  const customerRead = route.slice(route.indexOf("export async function GET"), route.indexOf("export async function POST"));
+  assert.match(customerRead, /where\("userId", "==", user\.uid\)\.limit\(100\)/);
+  assert.doesNotMatch(customerRead, /orderBy/);
+  assert.match(customerRead, /\.sort\(/);
+});
+
 test("prohibited credential and fake-engagement products are rejected", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const admin = read("src/app/api/admin/marketplace/route.ts");
