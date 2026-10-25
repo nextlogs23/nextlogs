@@ -1,0 +1,69 @@
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { requireAdmin, routeError } from "@/lib/server/auth";
+import { adminDb } from "@/lib/server/firebase-admin";
+import { assertPermittedMarketplaceProduct, marketplaceCategories, marketplaceFulfillment, marketplaceKinds } from "@/lib/server/marketplace";
+
+const productSchema = z.object({
+  title: z.string().trim().min(3).max(90), description: z.string().trim().min(12).max(500),
+  category: z.enum(marketplaceCategories), kind: z.enum(marketplaceKinds),
+  priceMinor: z.number().int().min(100), providerCostMinor: z.number().int().min(0).optional(), stock: z.number().int().min(0).max(100000),
+  featured: z.boolean().default(false), badge: z.string().trim().max(24).optional(), previewBullets: z.array(z.string().trim().min(2).max(100)).max(6),
+  fulfillment: z.enum(marketplaceFulfillment), deliveryUrl: z.string().url().startsWith("https://").optional(), active: z.boolean().default(false),
+}).superRefine((value, context) => { if (value.fulfillment === "instant" && !value.deliveryUrl) context.addIssue({ code: "custom", message: "Instant products require a secure delivery URL", path: ["deliveryUrl"] }); });
+const actionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("toggle"), productId: z.string().min(1), active: z.boolean() }),
+  z.object({ action: z.literal("fulfill"), reference: z.string().min(1), deliveryUrl: z.string().url().startsWith("https://") }),
+  z.object({ action: z.literal("refund"), reference: z.string().min(1), reason: z.string().trim().min(8).max(300) }),
+]);
+const iso = (value: unknown) => value instanceof Timestamp ? value.toDate().toISOString() : value && typeof value === "object" && "toDate" in value ? (value as { toDate(): Date }).toDate().toISOString() : null;
+
+export async function GET(request: NextRequest) {
+  try {
+    await requireAdmin(request); const db = adminDb();
+    const [products, orders] = await Promise.all([db.collection("marketplaceProducts").orderBy("createdAt", "desc").limit(100).get(), db.collection("marketplaceOrders").orderBy("createdAt", "desc").limit(100).get()]);
+    return Response.json({
+      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, category: data.category, kind: data.kind, priceMinor: data.priceMinor, stock: data.stock, active: data.active, fulfillment: data.fulfillment, createdAt: iso(data.createdAt) }; }),
+      orders: orders.docs.map((doc) => { const data = doc.data(); return { id: doc.id, reference: data.reference, userId: data.userId, productId: data.productId, title: data.title, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, createdAt: iso(data.createdAt) }; }),
+    });
+  } catch (error) { return routeError(error); }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const admin = await requireAdmin(request); const input = productSchema.parse(await request.json());
+    assertPermittedMarketplaceProduct(input.title, input.description, input.previewBullets.join(" "));
+    const db = adminDb(); const productRef = db.collection("marketplaceProducts").doc(); const auditRef = db.collection("adminAuditLogs").doc();
+    await db.runTransaction(async (transaction) => {
+      transaction.create(productRef, { ...input, providerCostMinor: input.providerCostMinor ?? null, badge: input.badge || null, deliveryUrl: input.deliveryUrl || null, createdBy: admin.uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+      transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_product_created", targetId: productRef.id, reason: "New marketplace catalogue item", metadata: { title: input.title, active: input.active }, createdAt: FieldValue.serverTimestamp() });
+    });
+    return Response.json({ id: productRef.id, created: true });
+  } catch (error) { if (error instanceof z.ZodError) return routeError(Object.assign(new Error(error.issues[0]?.message || "Invalid product"), { status: 400 })); return routeError(error); }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const admin = await requireAdmin(request); const input = actionSchema.parse(await request.json()); const db = adminDb();
+    if (input.action === "toggle") {
+      await Promise.all([db.collection("marketplaceProducts").doc(input.productId).set({ active: input.active, updatedAt: FieldValue.serverTimestamp() }, { merge: true }), db.collection("adminAuditLogs").add({ actorUid: admin.uid, action: input.active ? "marketplace_product_enabled" : "marketplace_product_disabled", targetId: input.productId, reason: "Catalogue availability changed", createdAt: FieldValue.serverTimestamp() })]);
+      return Response.json({ updated: true });
+    }
+    if (input.action === "fulfill") {
+      const orderRef = db.collection("marketplaceOrders").doc(input.reference); const transactionRef = db.collection("transactions").doc(input.reference); const auditRef = db.collection("adminAuditLogs").doc();
+      await db.runTransaction(async (transaction) => { const order = await transaction.get(orderRef); if (!order.exists || order.data()?.status !== "processing") throw Object.assign(new Error("Only processing orders can be fulfilled"), { status: 409 }); transaction.update(orderRef, { status: "completed", deliveryUrl: input.deliveryUrl, fulfilledBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.set(transactionRef, { status: "successful", updatedAt: FieldValue.serverTimestamp() }, { merge: true }); transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_order_fulfilled", targetId: input.reference, reason: "Manual digital delivery completed", createdAt: FieldValue.serverTimestamp() }); });
+      return Response.json({ updated: true });
+    }
+    const orderRef = db.collection("marketplaceOrders").doc(input.reference); const auditRef = db.collection("adminAuditLogs").doc();
+    await db.runTransaction(async (transaction) => {
+      const orderSnapshot = await transaction.get(orderRef); const order = orderSnapshot.data();
+      if (!orderSnapshot.exists || !["processing", "successful", "completed"].includes(order?.status)) throw Object.assign(new Error("This order cannot be refunded"), { status: 409 });
+      const walletRef = db.collection("wallets").doc(order!.userId); const refundRef = db.collection("walletTransactions").doc(`${input.reference}-REFUND`); const productRef = db.collection("marketplaceProducts").doc(order!.productId); const platformRef = db.collection("transactions").doc(input.reference);
+      const [wallet, refund, product] = await Promise.all([transaction.get(walletRef), transaction.get(refundRef), transaction.get(productRef)]);
+      if (!refund.exists) { const balance = wallet.data()?.balanceMinor ?? 0; const next = balance + order!.priceMinor; transaction.set(walletRef, { userId: order!.userId, balanceMinor: next, updatedAt: FieldValue.serverTimestamp() }, { merge: true }); transaction.create(refundRef, { userId: order!.userId, reference: `${input.reference}-REFUND`, amountMinor: order!.priceMinor, kind: "refund", description: `Marketplace refund: ${order!.title}`, balanceAfterMinor: next, status: "successful", actorUid: admin.uid, reason: input.reason, createdAt: FieldValue.serverTimestamp() }); if (product.exists && Number.isSafeInteger(product.data()?.stock)) transaction.update(productRef, { stock: product.data()!.stock + 1, updatedAt: FieldValue.serverTimestamp() }); }
+      transaction.update(orderRef, { status: "refunded", refundReason: input.reason, refundedBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.set(platformRef, { status: "refunded", updatedAt: FieldValue.serverTimestamp() }, { merge: true }); transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_order_refunded", targetId: input.reference, reason: input.reason, createdAt: FieldValue.serverTimestamp() });
+    });
+    return Response.json({ updated: true });
+  } catch (error) { if (error instanceof z.ZodError) return routeError(Object.assign(new Error("Invalid marketplace action"), { status: 400 })); return routeError(error); }
+}

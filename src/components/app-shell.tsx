@@ -20,6 +20,7 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
+  Store,
   PhoneCall,
   Search,
   Settings,
@@ -38,13 +39,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 type NavItem = readonly [string, string, typeof Gauge];
 
 const customerNav: NavItem[] = [
-  ["Overview", "", Gauge], ["SMS verification", "sms", Shield], ["Buy airtime", "airtime", PhoneCall],
+  ["Overview", "", Gauge], ["Marketplace", "marketplace", Store], ["SMS verification", "sms", Shield], ["Buy airtime", "airtime", PhoneCall],
   ["Buy data", "data", Smartphone], ["Electricity bills", "electricity", Bolt], ["Fund wallet", "wallet", WalletCards],
   ["Transactions", "transactions", CreditCard], ["Notifications", "notifications", Bell], ["Profile", "profile", UserRound], ["Support", "support", CircleHelp],
 ];
 
 const adminNav: NavItem[] = [
-  ["Overview", "", Gauge], ["Users", "users", Users], ["SMS orders", "sms-orders", MessageSquareText],
+  ["Overview", "", Gauge], ["Users", "users", Users], ["Marketplace", "marketplace", Store], ["SMS orders", "sms-orders", MessageSquareText],
   ["Airtime orders", "airtime-orders", PhoneCall], ["Data orders", "data-orders", Smartphone], ["Electricity", "electricity-orders", Bolt],
   ["Wallet activity", "wallet-transactions", WalletCards], ["API providers", "providers", Activity], ["Pricing", "pricing", Settings],
   ["Analytics", "analytics", ChartNoAxesCombined], ["Notifications", "notifications", Bell], ["Settings", "settings", Settings],

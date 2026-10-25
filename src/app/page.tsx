@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Bolt, Check, ChevronRight, CreditCard, LockKeyhole, MessageSquareText, PhoneCall, ReceiptText, ShieldCheck, Smartphone, WalletCards, Wifi } from "lucide-react";
+import { ArrowRight, BadgeCheck, Bolt, Check, ChevronRight, CreditCard, LockKeyhole, MessageSquareText, PhoneCall, ReceiptText, ShieldCheck, Smartphone, Store, WalletCards, Wifi } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { MobileNav } from "@/components/mobile-nav";
 import { MotionReveal } from "@/components/motion-reveal";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const services = [
+  { title: "Digital marketplace", copy: "Preview approved digital products, creative assets, and live number services.", href: "/dashboard/marketplace", icon: Store },
   { title: "SMS verification", copy: "Provider-supported numbers with real inbound message status.", href: "/dashboard/sms", icon: MessageSquareText },
   { title: "Airtime recharge", copy: "Fast top-ups across supported Nigerian mobile networks.", href: "/dashboard/airtime", icon: PhoneCall },
   { title: "Mobile data", copy: "Browse live bundles and complete a simple, secure checkout.", href: "/dashboard/data", icon: Wifi },
@@ -14,7 +15,7 @@ const services = [
   { title: "Wallet funding", copy: "Fund through Paystack and track every credit in your ledger.", href: "/dashboard/wallet", icon: WalletCards },
 ];
 const faqs = [
-  ["What can I use the wallet for?", "Use your balance for SMS verification, airtime, mobile data and supported electricity bill payments."],
+  ["What can I use the wallet for?", "Use your balance for marketplace products, SMS verification, airtime, mobile data and supported electricity bill payments."],
   ["How does SMS verification work?", "Choose an available country and service, review the live price, then receive real provider messages inside your dashboard."],
   ["Are purchases confirmed instantly?", "The platform only marks a purchase successful after the configured provider confirms the outcome."],
   ["How are wallet deposits protected?", "Deposits are credited only after Paystack verifies the payment, using signed webhooks and idempotent wallet operations."],
@@ -38,7 +39,7 @@ export default function Home() {
   return <main className="mk-site"><MotionReveal />
     <nav className="mk-nav"><div className="shell"><Brand /><div className="mk-nav-links desktop-only"><a href="#services">Services</a><a href="#how">How it works</a><a href="#security">Security</a><a href="#faq">FAQs</a></div><div className="mk-nav-actions"><ThemeToggle compact /><Link href="/login" className="mk-login desktop-only">Log in</Link><Link href="/register" className="mk-primary mk-nav-cta">Create account <ArrowRight size={14} /></Link><MobileNav /></div></div></nav>
 
-    <section className="mk-hero"><div className="shell mk-hero-grid"><div className="mk-hero-copy"><span className="mk-kicker"><i /> Digital services, one secure wallet</span><h1>Everyday payments.<br /><em>Handled beautifully.</em></h1><p>Buy airtime and data, pay electricity bills, and access permitted SMS verification services from one reliable financial workspace.</p><div className="mk-hero-actions"><Link href="/register" className="mk-primary large">Get started free <ArrowRight size={16} /></Link><a href="#how" className="mk-secondary">See how it works <ChevronRight size={15} /></a></div><div className="mk-trust"><span><ShieldCheck size={16} /> Secure payments</span><span><BadgeCheck size={16} /> Provider-confirmed delivery</span></div></div><ProductPreview /></div></section>
+    <section className="mk-hero"><div className="shell mk-hero-grid"><div className="mk-hero-copy"><span className="mk-kicker"><i /> Digital services, one secure wallet</span><h1>Everyday payments.<br /><em>Handled beautifully.</em></h1><p>Explore approved digital products, buy airtime and data, pay electricity bills, and access permitted SMS verification services from one reliable financial workspace.</p><div className="mk-hero-actions"><Link href="/register" className="mk-primary large">Get started free <ArrowRight size={16} /></Link><a href="#how" className="mk-secondary">See how it works <ChevronRight size={15} /></a></div><div className="mk-trust"><span><ShieldCheck size={16} /> Secure payments</span><span><BadgeCheck size={16} /> Provider-confirmed delivery</span></div></div><ProductPreview /></div></section>
 
     <section id="supported-networks" className="mk-logo-strip"><div className="shell mk-logo-strip-inner"><p>Supported networks &amp; platforms</p><div className="mk-logo-list">{supportedBrands.map(({ name, label }) => <div className="mk-logo-brand" key={name}><span><Image src={`/logos/${name}.png`} alt={`${label} logo`} width={30} height={30} /></span><b>{label}</b></div>)}</div></div></section>
 
@@ -53,6 +54,6 @@ export default function Home() {
     <section id="closing-cta" className="mk-final shell"><div className="mk-final-copy"><span>Everything in one secure account</span><h2>Ready to simplify your everyday digital services?</h2><p>Fund your wallet once, choose the service you need, and follow every transaction from one elegant dashboard.</p><div className="mk-final-actions"><Link href="/register" className="mk-light-button">Create free account <ArrowRight size={14} /></Link><Link href="/login" className="mk-final-login">Sign in to your account <ChevronRight size={14} /></Link></div></div><div className="mk-final-proof"><div><span><ShieldCheck size={18} /></span><p><b>Protected payments</b><small>Secure Paystack verification</small></p></div><div><span><BadgeCheck size={18} /></span><p><b>Honest delivery status</b><small>Real provider confirmations</small></p></div><div><span><WalletCards size={18} /></span><p><b>One auditable wallet</b><small>Every credit and debit tracked</small></p></div></div></section>
 
     <div id="footer" aria-hidden="true" />
-    <footer className="mk-footer"><div className="shell mk-footer-grid"><div className="mk-footer-brand"><Brand light /><p>A secure digital-services platform for SMS verification, airtime, data, electricity and wallet payments.</p></div><div><h3>Services</h3><Link href="/dashboard/sms">SMS Verification</Link><Link href="/dashboard/airtime">Buy Airtime</Link><Link href="/dashboard/data">Buy Data</Link><Link href="/dashboard/electricity">Electricity Bills</Link><Link href="/dashboard/wallet">Fund Wallet</Link></div><div><h3>Company</h3><a href="#services">About Us</a><a href="#faq">Contact</a><a href="#faq">Help Centre</a><a href="#faq">FAQs</a></div><div><h3>Legal</h3><span>Privacy Policy</span><span>Terms of Service</span><span>Refund Policy</span></div></div><div className="shell mk-footer-bottom"><span>© {new Date().getFullYear()} DMB Logs Portal. All rights reserved.</span><span><ShieldCheck size={13} /> Secure digital services</span></div></footer>
+    <footer className="mk-footer"><div className="shell mk-footer-grid"><div className="mk-footer-brand"><Brand light /><p>A secure platform for approved digital products, SMS verification, airtime, data, electricity and wallet payments.</p></div><div><h3>Services</h3><Link href="/dashboard/marketplace">Marketplace</Link><Link href="/dashboard/sms">SMS Verification</Link><Link href="/dashboard/airtime">Buy Airtime</Link><Link href="/dashboard/data">Buy Data</Link><Link href="/dashboard/electricity">Electricity Bills</Link><Link href="/dashboard/wallet">Fund Wallet</Link></div><div><h3>Company</h3><a href="#services">About Us</a><a href="#faq">Contact</a><a href="#faq">Help Centre</a><a href="#faq">FAQs</a></div><div><h3>Legal</h3><span>Privacy Policy</span><span>Terms of Service</span><span>Refund Policy</span></div></div><div className="shell mk-footer-bottom"><span>© {new Date().getFullYear()} DMB Logs Portal. All rights reserved.</span><span><ShieldCheck size={13} /> Secure digital services</span></div></footer>
   </main>;
 }

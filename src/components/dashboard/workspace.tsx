@@ -31,6 +31,7 @@ import {
   Send,
   ShieldCheck,
   Smartphone,
+  Store,
   UserRound,
   WalletCards,
   Wifi,
@@ -215,7 +216,7 @@ function WalletWorkspace() {
 }
 
 function ServicesWorkspace() {
-  const items = [{ title: "SMS verification", copy: "Rent provider-supported numbers and receive real messages.", href: "/dashboard/sms", icon: MessageSquareText }, { title: "Airtime recharge", copy: "Top up MTN, Airtel, Glo and 9mobile numbers.", href: "/dashboard/airtime", icon: PhoneCall }, { title: "Mobile data", copy: "Browse live network bundles and complete checkout.", href: "/dashboard/data", icon: Wifi }, { title: "Electricity bills", copy: "Validate meters and pay supported Nigerian DISCOs.", href: "/dashboard/electricity", icon: Bolt }, { title: "Wallet funding", copy: "Add money securely using Paystack verification.", href: "/dashboard/wallet", icon: WalletCards }];
+  const items = [{ title: "Digital marketplace", copy: "Preview numbers, creative assets, templates, and approved digital products.", href: "/dashboard/marketplace", icon: Store }, { title: "SMS verification", copy: "Rent provider-supported numbers and receive real messages.", href: "/dashboard/sms", icon: MessageSquareText }, { title: "Airtime recharge", copy: "Top up MTN, Airtel, Glo and 9mobile numbers.", href: "/dashboard/airtime", icon: PhoneCall }, { title: "Mobile data", copy: "Browse live network bundles and complete checkout.", href: "/dashboard/data", icon: Wifi }, { title: "Electricity bills", copy: "Validate meters and pay supported Nigerian DISCOs.", href: "/dashboard/electricity", icon: Bolt }, { title: "Wallet funding", copy: "Add money securely using Paystack verification.", href: "/dashboard/wallet", icon: WalletCards }];
   return <><PageHeader eyebrow="Service centre" title="Everything in one place" copy="Choose a service and complete it through a focused, secure flow." /><div className="services-gallery">{items.map(({ title, copy, href, icon: Icon }, index) => <Link href={href} key={title} className="service-gallery-card"><span className={index % 2 ? "rose" : "blue"}><Icon size={22} /></span><div><h2>{title}</h2><p>{copy}</p></div><ChevronRight size={18} /></Link>)}</div></>;
 }
 
