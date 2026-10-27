@@ -9,10 +9,12 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:smspool": "node --test tests/smspool-readiness.test.mjs",
     "test:telnyx": "node --test tests/telnyx-readiness.test.mjs",
-    "test:marketplace": "node --test tests/marketplace-readiness.test.mjs"
+    "test:marketplace": "node --test tests/marketplace-readiness.test.mjs",
+    "test:vtpass": "node --test tests/vtpass-readiness.test.mjs"
   },
   "dependencies": {
     "firebase": "^12.16.0",
@@ -34,6 +36,8 @@
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.3",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.0.0"
   }

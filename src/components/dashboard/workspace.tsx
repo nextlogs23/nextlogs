@@ -41,10 +41,12 @@ import {
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { auth } from "@/lib/firebase/client";
+import { VtpassWorkspace } from "./vtpass-workspace";
 
 type Transaction = { id: string; reference?: string; serviceType?: string; amountMinor?: number; retailPriceMinor?: number; status?: string; providerReference?: string; createdAt?: string | { seconds?: number } };
 type SmsService = { id: string; name: string; priceMinor?: number; costMinor?: number };
-type DataPlan = { id: string; name: string; costMinor: number };
+type DataPlan = { id: string; name: string; validity?: string; providerCostMinor: number; priceMinor: number; costMinor?: number };
+type ElectricityProvider = { id: string; name: string };
 
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const networks = [
@@ -56,7 +58,7 @@ const countries = [
   { code: "GB", name: "United Kingdom", dial: "+44", flag: "🇬🇧" }, { code: "CA", name: "Canada", dial: "+1", flag: "🇨🇦" },
   { code: "DE", name: "Germany", dial: "+49", flag: "🇩🇪" }, { code: "FR", name: "France", dial: "+33", flag: "🇫🇷" },
 ];
-const discos = ["Ikeja Electric", "Eko Electric", "Abuja Electric", "Ibadan Electric", "Enugu Electric", "Port Harcourt Electric", "Kano Electric"];
+const discos = ["ikeja-electric", "eko-electric", "abuja-electric", "ibadan-electric", "enugu-electric", "portharcourt-electric", "kano-electric"];
 
 function PageHeader({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: ReactNode }) {
   return <header className="workspace-heading"><div><p className="ui-eyebrow">{eyebrow}</p><h1>{title}</h1><p>{copy}</p></div>{action}</header>;
@@ -227,7 +229,7 @@ function ProfileOrSupport({ type }: { type: "profile" | "support" }) {
 
 export function CustomerWorkspace({ section = "services" }: { section?: string }) {
   if (section === "sms") return <SmsWorkspace />;
-  if (section === "airtime" || section === "data" || section === "electricity") return <VtuWorkspace type={section} />;
+  if (section === "airtime" || section === "data" || section === "electricity") return <VtpassWorkspace type={section} />;
   if (section === "wallet") return <WalletWorkspace />;
   if (section === "transactions") return <><PageHeader eyebrow="Account activity" title="Transactions" copy="Every wallet credit, purchase, provider outcome, and refund in one searchable ledger." /><TransactionsTable kind="all" /></>;
   if (section === "notifications") return <><PageHeader eyebrow="Notification centre" title="Updates that matter" copy="Payment confirmations, service updates, and security notices will appear here." /><section className="ui-card"><EmptyState icon={Bell} title="You're all caught up" copy="There are no new notifications for your account." /></section></>;
