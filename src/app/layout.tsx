@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
+import { TelegramChannelInvite, TelegramChat } from "@/components/telegram-chat";
 import "./globals.css";
 import "./polish.css";
 
@@ -29,5 +30,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" suppressHydrationWarning><body>{children}<Toaster richColors position="top-right" /></body></html>;
+  return <html lang="en" suppressHydrationWarning><body>{children}<TelegramChannelInvite /><TelegramChat /><Toaster richColors position="top-right" /></body></html>;
 }

@@ -281,3 +281,69 @@ html.dark .mobile-menu-panel{border-color:var(--line);background:linear-gradient
   .modal-layer{padding-left:12px;padding-right:12px}
   .modal-card,.marketplace-preview-modal,.marketplace-checkout{width:100%;max-width:500px}
 }
+
+/* Telegram customer support */
+.telegram-chat{position:fixed;right:22px;bottom:22px;z-index:54;display:grid;grid-template-columns:46px auto;align-items:center;gap:11px;min-height:62px;border:1px solid rgba(255,255,255,.72);border-radius:19px;background:rgba(255,255,255,.94);padding:7px 17px 7px 8px;color:#132a44;box-shadow:0 18px 50px rgba(10,45,75,.2);backdrop-filter:blur(16px);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.telegram-chat:hover{border-color:rgba(42,171,238,.45);box-shadow:0 23px 60px rgba(14,75,113,.26);transform:translateY(-3px)}
+.telegram-chat-icon{display:grid;width:46px;height:46px;grid-row:1 / span 2;place-items:center;border-radius:14px;background:linear-gradient(145deg,#38b8f1,#168bc9);color:#fff;box-shadow:0 10px 22px rgba(36,161,222,.28)}
+.telegram-chat-icon svg{width:25px;height:25px;fill:currentColor}
+.telegram-chat-copy{display:flex;min-width:120px;flex-direction:column;justify-content:center}
+.telegram-chat-copy small{color:#728397;font-size:8px;font-weight:800;line-height:1.2}
+.telegram-chat-copy strong{margin-top:3px;font-size:11px;font-weight:950;letter-spacing:-.01em;line-height:1.2}
+.telegram-chat-presence{position:absolute;right:9px;top:9px;width:9px;height:9px;border:2px solid #fff;border-radius:50%;background:#28b879;box-sizing:content-box}
+html.dark .telegram-chat{border-color:#34495d;background:rgba(17,31,45,.95);color:#f0f6fb;box-shadow:0 19px 55px rgba(0,0,0,.42)}
+html.dark .telegram-chat-copy small{color:#9eb0c1}
+html.dark .telegram-chat-presence{border-color:#111f2d}
+@media(max-width:1023px){.telegram-chat.is-dashboard{right:14px;bottom:94px}}
+@media(max-width:620px){
+  .telegram-chat{right:14px;bottom:16px;display:grid;width:54px;min-height:54px;grid-template-columns:1fr;border-radius:17px;padding:5px}
+  .telegram-chat.is-dashboard{right:12px;bottom:92px}
+  .telegram-chat-icon{width:44px;height:44px;grid-row:auto;border-radius:13px}
+  .telegram-chat-copy{display:none}
+  .telegram-chat-presence{right:3px;top:3px}
+}
+
+/* Telegram channel invitation */
+.telegram-invite-layer{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:20px}
+.telegram-invite-backdrop{position:absolute;inset:0;border:0;background:rgba(5,20,35,.62);backdrop-filter:blur(8px);animation:telegram-backdrop-in .25s ease both}
+.telegram-invite-card{position:relative;display:grid;width:min(92vw,680px);grid-template-columns:240px minmax(0,1fr);overflow:hidden;border:1px solid rgba(255,255,255,.75);border-radius:27px;background:var(--surface);box-shadow:0 38px 110px rgba(4,26,47,.38);animation:telegram-invite-in .34s cubic-bezier(.2,.8,.2,1) both}
+.telegram-invite-close{position:absolute;right:15px;top:15px;z-index:4;display:grid;width:36px;height:36px;place-items:center;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--surface) 92%,transparent);color:var(--muted);transition:.2s}
+.telegram-invite-close:hover{border-color:#70bde5;color:#168bc9;transform:rotate(3deg)}
+.telegram-invite-close svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-width:2}
+.telegram-invite-art{position:relative;display:grid;min-height:330px;overflow:hidden;place-items:center;background:radial-gradient(circle at 24% 18%,rgba(255,255,255,.38),transparent 22%),linear-gradient(150deg,#3bc0f5,#148dcc 58%,#126aa5)}
+.telegram-invite-art:before,.telegram-invite-art:after{position:absolute;border:1px solid rgba(255,255,255,.18);border-radius:50%;content:""}
+.telegram-invite-art:before{width:245px;height:245px;right:-92px;top:-85px}
+.telegram-invite-art:after{width:195px;height:195px;left:-93px;bottom:-70px}
+.telegram-invite-plane{position:relative;z-index:2;display:grid;width:112px;height:112px;place-items:center;border:1px solid rgba(255,255,255,.45);border-radius:34px;background:rgba(255,255,255,.95);color:#209ed9;box-shadow:0 28px 60px rgba(4,69,106,.3);transform:rotate(-5deg)}
+.telegram-invite-plane svg{width:59px;height:59px;fill:currentColor}
+.telegram-invite-orbit{position:absolute;border-radius:50%;background:rgba(255,255,255,.88);box-shadow:0 12px 30px rgba(7,70,106,.22);animation:telegram-orbit 4.2s ease-in-out infinite}
+.telegram-invite-orbit.one{left:34px;top:55px;width:18px;height:18px}
+.telegram-invite-orbit.two{right:26px;bottom:52px;width:26px;height:26px;animation-delay:-1.8s}
+.telegram-invite-content{display:flex;min-width:0;flex-direction:column;justify-content:center;padding:52px 44px 40px}
+.telegram-invite-kicker{color:#168bc9;font-size:8px;font-weight:950;letter-spacing:.16em;text-transform:uppercase}
+.telegram-invite-content h2{margin-top:12px;color:var(--ink);font-size:28px;font-weight:950;letter-spacing:-.045em;line-height:1.06}
+.telegram-invite-content>p{margin-top:14px;color:var(--muted);font-size:11px;line-height:1.75}
+.telegram-invite-actions{display:grid;grid-template-columns:1.25fr .75fr;gap:9px;margin-top:24px}
+.telegram-invite-actions a,.telegram-invite-actions button{display:inline-flex;min-height:46px;align-items:center;justify-content:center;border-radius:12px;padding:0 14px;font-size:10px;font-weight:900;transition:.2s}
+.telegram-invite-actions a{background:linear-gradient(135deg,#29ace7,#168bc9);color:#fff;box-shadow:0 12px 25px rgba(34,158,216,.24)}
+.telegram-invite-actions a:hover{box-shadow:0 16px 32px rgba(34,158,216,.32);transform:translateY(-2px)}
+.telegram-invite-actions button{border:1px solid var(--line);background:var(--surface-soft);color:var(--muted)}
+.telegram-invite-actions button:hover{border-color:#aac9dd;color:var(--ink)}
+.telegram-invite-content>small{margin-top:14px;color:color-mix(in srgb,var(--muted) 78%,transparent);font-size:8px;text-align:center}
+html.dark .telegram-invite-card{border-color:#3b5369;background:#111f2d}
+html.dark .telegram-invite-close{border-color:#3b5369;background:#172838}
+html.dark .telegram-invite-actions button{border-color:#34495d;background:#172838;color:#b5c3cf}
+@keyframes telegram-invite-in{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes telegram-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes telegram-orbit{50%{transform:translateY(-9px) scale(1.08)}}
+@media(max-width:620px){
+  .telegram-invite-layer{align-items:end;padding:12px}
+  .telegram-invite-card{width:100%;grid-template-columns:1fr;border-radius:23px}
+  .telegram-invite-art{min-height:150px}
+  .telegram-invite-plane{width:76px;height:76px;border-radius:24px}
+  .telegram-invite-plane svg{width:41px;height:41px}
+  .telegram-invite-content{padding:26px 22px 22px;text-align:center}
+  .telegram-invite-content h2{font-size:24px}
+  .telegram-invite-actions{grid-template-columns:1fr;margin-top:20px}
+  .telegram-invite-actions a,.telegram-invite-actions button{min-height:48px;font-size:11px}
+}
