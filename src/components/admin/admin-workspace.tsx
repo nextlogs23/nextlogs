@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BadgeCheck, Banknote, CircleAlert, CloudCog, CreditCard, Gauge, Inbox, Search, Settings2, ShieldAlert, SlidersHorizontal, Users, WalletCards } from "lucide-react";
+import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BadgeCheck, Banknote, CircleAlert, CloudCog, CreditCard, Gauge, Inbox, LoaderCircle, Search, Send, Settings2, ShieldAlert, SlidersHorizontal, Users, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 
@@ -69,6 +69,47 @@ function VtpassPricing() {
   return <section className="admin3-card admin3-form-card"><div className="admin3-form-grid"><label>VTpass service ID<input value={serviceId} onChange={(event) => setServiceId(event.target.value.toLowerCase())} placeholder="mtn-data" /></label><label>Markup percentage<input type="number" min="0" max="100" value={markup} onChange={(event) => setMarkup(event.target.value)} /></label><label>Flat fee (NGN)<input type="number" min="0" value={fee} onChange={(event) => setFee(event.target.value)} /></label><label>Availability<select value={active ? "enabled" : "disabled"} onChange={(event) => setActive(event.target.value === "enabled")}><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></label></div><div className="admin3-form-footer"><p><b>Server-side pricing</b><span>The wallet is charged only after the selling price is recalculated securely.</span></p><button disabled={busy} onClick={() => void save()}>Save VTpass pricing <ArrowRight size={14} /></button></div></section>;
 }
 
+function TelegramSettingsPanel() {
+  const [liveChatUrl, setLiveChatUrl] = useState("https://t.me/NEXTLOG_1");
+  const [channelUrl, setChannelUrl] = useState("https://t.me/NEXTLOG23");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api<{ liveChatUrl: string; channelUrl: string }>("/api/admin/telegram")
+      .then((settings) => { setLiveChatUrl(settings.liveChatUrl); setChannelUrl(settings.channelUrl); })
+      .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load Telegram settings"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const settings = await api<{ liveChatUrl: string; channelUrl: string }>("/api/admin/telegram", {
+        method: "PATCH",
+        body: JSON.stringify({ liveChatUrl, channelUrl }),
+      });
+      setLiveChatUrl(settings.liveChatUrl);
+      setChannelUrl(settings.channelUrl);
+      toast.success("Telegram links updated. Customer pages will use them automatically.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update Telegram settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <section className="admin3-card admin3-settings telegram-admin-settings">
+    <div className="admin3-settings-head"><span><Send size={19} /></span><div><h2>Telegram communication</h2><p>Control the customer support chat and community invitation without redeploying the website.</p></div></div>
+    <label>Live chat Telegram account<input disabled={loading || saving} value={liveChatUrl} onChange={(event) => setLiveChatUrl(event.target.value)} placeholder="@NEXTLOG_1 or https://t.me/NEXTLOG_1" /></label>
+    <small className="telegram-setting-help">Used by the floating “Chat on Telegram” support button.</small>
+    <label>Telegram channel<input disabled={loading || saving} value={channelUrl} onChange={(event) => setChannelUrl(event.target.value)} placeholder="@NEXTLOG23 or https://t.me/NEXTLOG23" /></label>
+    <small className="telegram-setting-help">Used by the channel invitation popup shown to customers once per browsing session.</small>
+    <div className="telegram-admin-preview"><Send size={16} /><p><b>Public links only</b><span>Changes are stored server-side and recorded in the immutable administrator audit log.</span></p></div>
+    <button disabled={loading || saving} onClick={() => void save()}>{saving ? <LoaderCircle className="animate-spin" size={15} /> : <Settings2 size={15} />} Save Telegram settings <ArrowRight size={14} /></button>
+  </section>;
+}
+
 function ProviderReadiness() {
   return <section className="admin3-card admin3-providers"><div className="admin3-card-head compact"><div><span>Infrastructure</span><h2>Provider readiness</h2></div><Link href="/admin/providers">Manage <ArrowRight size={13} /></Link></div><div className="admin3-provider-list">{[["Telnyx", "Exact-number SMS provider"], ["SMSPool", "Verification orders and rentals"], ["VTU services", "Airtime, data and bills"], ["Paystack", "Wallet funding"]].map(([name, type]) => <div key={name}><span><CloudCog size={17} /></span><p><b>{name}</b><small>{type}</small></p><em>Check required</em></div>)}</div><p className="admin3-provider-note"><ShieldAlert size={14} /> Secrets remain in protected server environment variables.</p></section>;
 }
@@ -98,7 +139,8 @@ export function AdminWorkspace({ section = "" }: { section?: string }) {
   if (section === "providers") return <div className="admin3-page"><Header title="API providers" copy="Monitor connection readiness without returning secret values to the browser." actionHref="/admin/settings" actionLabel="Environment guide" /><div className="admin3-provider-grid">{[["Telnyx", "Exact-number SMS provider"], ["SMSPool", "Verification and rental provider"], ["VTU services", "VTU provider"], ["Paystack", "Payment gateway"]].map(([name, kind]) => <article key={name} className="admin3-provider-card"><div><span><CloudCog size={20} /></span><em>Check required</em></div><small>{kind}</small><h2>{name}</h2><p>Connectivity is verified through a protected server route. Secret values are never displayed.</p><button onClick={() => void testProvider(name)}>Test connection <ArrowRight size={14} /></button></article>)}</div><div className="admin3-security-note"><ShieldAlert size={19} /><div><b>Server-side secrets only</b><p>Provider credentials are read from protected environment variables and are never included in client bundles.</p></div></div></div>;
   if (section === "pricing") return <div className="admin3-page"><Header title="Pricing management" copy="Set retail prices, availability and expected margins with a clear audit trail." actionHref="/admin/analytics" actionLabel="View margins" /><VtpassPricing /></div>;
   if (section === "analytics") return <div className="admin3-page"><Header title="Revenue analytics" copy="Track retail value, provider costs and estimated gross margin from real transactions." /><div className="admin3-kpi-grid three"><Metric icon={CreditCard} value={money(summary.purchases)} label="Gross service value" loading={loading} /><Metric icon={ArrowDownRight} value={money(summary.costs)} label="Provider costs" loading={loading} tone="amber" /><Metric icon={ArrowUpRight} value={money(summary.grossProfitMinor)} label="Estimated gross profit" loading={loading} tone="green" /></div><AdminInsights summary={summary} /></div>;
-  if (section === "notifications" || section === "settings") return <div className="admin3-page"><Header title={section === "settings" ? "Platform settings" : "Notifications"} copy={section === "settings" ? "Manage service controls and operational guardrails." : "Create clear platform messages for selected audiences."} /><section className="admin3-card admin3-settings"><div className="admin3-settings-head"><span><Settings2 size={19} /></span><div><h2>{section === "settings" ? "General configuration" : "Compose notification"}</h2><p>Changes are applied only through protected administrative routes.</p></div></div><label>{section === "settings" ? "Support email" : "Title"}<input placeholder={section === "settings" ? "support@yourdomain.com" : "Message title"} /></label><label>{section === "settings" ? "Maintenance notice" : "Message"}<textarea placeholder="Enter details…" /></label><button onClick={() => toast.info("Save through the protected admin API after configuration.")}>Save changes <ArrowRight size={14} /></button></section></div>;
+  if (section === "settings") return <div className="admin3-page"><Header title="Platform settings" copy="Manage customer communication and operational controls through protected admin routes." /><TelegramSettingsPanel /></div>;
+  if (section === "notifications") return <div className="admin3-page"><Header title="Notifications" copy="Create clear platform messages for selected audiences." /><section className="admin3-card admin3-settings"><div className="admin3-settings-head"><span><Settings2 size={19} /></span><div><h2>Compose notification</h2><p>Changes are applied only through protected administrative routes.</p></div></div><label>Title<input placeholder="Message title" /></label><label>Message<textarea placeholder="Enter details…" /></label><button onClick={() => toast.info("Save through the protected admin API after configuration.")}>Save changes <ArrowRight size={14} /></button></section></div>;
 
   return <div className="admin3-page"><Header title="Operations overview" copy="A live view of platform health, money movement and provider-confirmed delivery." /><div className="admin3-kpi-grid"><Metric icon={Users} value={String(summary.totalUsers)} label="Total users" loading={loading} /><Metric icon={WalletCards} value={money(summary.totalWalletBalancesMinor)} label="Wallet balances" loading={loading} tone="cyan" /><Metric icon={Banknote} value={money(summary.revenueMinor)} label="Total revenue" loading={loading} tone="green" /><Metric icon={BadgeCheck} value={String(summary.successful)} label="Successful transactions" loading={loading} tone="indigo" /></div><AdminInsights summary={summary} /><div className="admin3-lower"><ProviderReadiness /><EmptyTable label="Latest platform activity" /></div></div>;
 }

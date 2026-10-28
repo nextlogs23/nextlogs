@@ -7,8 +7,24 @@ const telegramUrl = "https://t.me/NEXTLOG_1";
 const telegramChannelUrl = "https://t.me/NEXTLOG23";
 const inviteStorageKey = "dmb-telegram-channel-invite-seen";
 
+type TelegramSettings = { liveChatUrl: string; channelUrl: string };
+
+function useTelegramSettings() {
+  const [settings, setSettings] = useState<TelegramSettings>({ liveChatUrl: telegramUrl, channelUrl: telegramChannelUrl });
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/public/telegram", { cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() as Promise<TelegramSettings> : Promise.reject())
+      .then(setSettings)
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+  return settings;
+}
+
 export function TelegramChat() {
   const pathname = usePathname();
+  const settings = useTelegramSettings();
 
   if (pathname.startsWith("/admin")) return null;
 
@@ -17,7 +33,7 @@ export function TelegramChat() {
   return (
     <a
       className={`telegram-chat${dashboard ? " is-dashboard" : ""}`}
-      href={telegramUrl}
+      href={settings.liveChatUrl}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with DMB Logs Portal support on Telegram"
@@ -38,6 +54,7 @@ export function TelegramChat() {
 
 export function TelegramChannelInvite() {
   const pathname = usePathname();
+  const settings = useTelegramSettings();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -95,7 +112,7 @@ export function TelegramChannelInvite() {
           <h2 id="telegram-invite-title">Join our Telegram channel</h2>
           <p>Get important platform announcements, service updates, offers, and helpful tips directly on Telegram.</p>
           <div className="telegram-invite-actions">
-            <a href={telegramChannelUrl} target="_blank" rel="noopener noreferrer" onClick={dismiss}>Join @NEXTLOG23</a>
+            <a href={settings.channelUrl} target="_blank" rel="noopener noreferrer" onClick={dismiss}>Join Telegram channel</a>
             <button type="button" onClick={dismiss}>Maybe later</button>
           </div>
           <small>You can leave the channel at any time.</small>

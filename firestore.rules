@@ -43,6 +43,7 @@ service cloud.firestore {
     match /vtuMeterVerifications/{id} { allow read, write: if false; }
     match /servicePricing/{id} { allow read, write: if false; }
     match /providerConfigurations/{id} { allow read, write: if false; }
+    match /platformSettings/{id} { allow read, write: if false; }
     match /notifications/{id} { allow read, write: if false; }
     match /adminAuditLogs/{id} { allow read, write: if false; }
     match /rateLimits/{id} { allow read, write: if false; }

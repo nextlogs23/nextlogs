@@ -303,6 +303,18 @@ html.dark .telegram-chat-presence{border-color:#111f2d}
   .telegram-chat-presence{right:3px;top:3px}
 }
 
+/* Admin-managed Telegram links */
+.telegram-admin-settings{max-width:780px}
+.telegram-admin-settings>label{margin-bottom:5px}
+.telegram-setting-help{display:block;margin:-7px 0 16px;color:var(--muted);font-size:8px;line-height:1.5}
+.telegram-admin-preview{display:flex;align-items:flex-start;gap:11px;margin:4px 20px 18px;border:1px solid #cce7f5;border-radius:14px;background:#eef9ff;padding:14px;color:#167cae}
+.telegram-admin-preview>svg{flex:0 0 auto;margin-top:1px}
+.telegram-admin-preview b,.telegram-admin-preview span{display:block}
+.telegram-admin-preview b{font-size:9px;font-weight:900}
+.telegram-admin-preview span{margin-top:4px;color:#578096;font-size:8px;line-height:1.55}
+html.dark .telegram-admin-preview{border-color:#31546a;background:#143044;color:#8dcff4}
+html.dark .telegram-admin-preview span{color:#b4c8d6}
+
 /* Telegram channel invitation */
 .telegram-invite-layer{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:20px}
 .telegram-invite-backdrop{position:absolute;inset:0;border:0;background:rgba(5,20,35,.62);backdrop-filter:blur(8px);animation:telegram-backdrop-in .25s ease both}
