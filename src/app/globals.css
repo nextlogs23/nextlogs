@@ -87,7 +87,7 @@ html.dark{--ink:#f5f3ff;--muted:#aaa6bd;--line:#302d43;--cream:#100f19;--card:#1
 @media(max-width:760px){.hero-copy h1{font-size:clamp(3.15rem,15vw,4.2rem)}.hero-kicker{font-size:8px}.hero-description{font-size:13px}.hero-visual{height:440px!important;margin-top:10px!important}.hero-section:after{right:-60%;bottom:-18%;width:160%;height:46%}.portal-content{padding:12px 12px 92px}.dash-hero-grid{padding:18px}.dash-wallet-card{min-height:175px}.dash-metric{padding:15px}}
 .dash-hero h1>span{color:#6d38ff!important}
 
-/* DMB refined navy design system */
+/* Nextlogs refined navy design system */
 :root{--ink:#10233f;--muted:#718198;--line:#e3e9f0;--cream:#f5f7fa;--green:#1769e0;--teal:#103f78;--blue:#1769e0;--card:#fff;--surface:#fff;--surface-soft:#f7f9fc;--brand:#1769e0;--brand-strong:#0d55bd;--accent:#d05877;--accent-soft:#fff2f5;--shadow:0 14px 38px rgba(20,45,76,.06)}
 html.dark{--ink:#edf4fb;--muted:#9baabd;--line:#26394d;--cream:#0d1724;--card:#132235;--surface:#132235;--surface-soft:#182a3f;--brand:#6fa9ef;--brand-strong:#91bff4;--accent:#e985a0;--accent-soft:#392330;--shadow:0 18px 48px rgba(0,0,0,.22)}
 body{font-family:Inter,"Segoe UI",Arial,sans-serif}.ui-button-primary,.mk-primary{border-color:transparent;background:linear-gradient(135deg,#1769e0,#0f58c5);box-shadow:0 10px 24px rgba(23,105,224,.2)}.ui-button-primary:hover,.mk-primary:hover{background:linear-gradient(135deg,#125bc5,#0b4ca8);box-shadow:0 14px 30px rgba(23,105,224,.24)}

@@ -6,16 +6,16 @@ import "./polish.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  title: { default: "DMB Logs Portal — Everyday digital services", template: "%s · DMB Logs Portal" },
+  title: { default: "Nextlogs — Everyday digital services", template: "%s · Nextlogs" },
   description: "Secure SMS verification, airtime, data, electricity and wallet services in one place.",
   icons: {
-    icon: "/dmb-logins-logo.png",
-    apple: "/dmb-logins-logo.png",
+    icon: "/nextlogs-mark.png",
+    apple: "/nextlogs-mark.png",
   },
   openGraph: {
-    title: "DMB Logs Portal",
+    title: "Nextlogs",
     description: "Secure SMS verification, airtime, data, electricity and wallet services in one place.",
-    images: ["/dmb-logins-logo.png"],
+    images: ["/nextlogs-logo.png"],
   },
 };
 

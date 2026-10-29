@@ -13,7 +13,7 @@ export function assertPermittedMarketplaceProduct(...values: string[]) {
 }
 
 export function stableMarketplaceReference(uid: string, idempotencyKey: string) {
-  return `DMB-MKT-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`;
+  return `NXL-MKT-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`;
 }
 
 export function publicMarketplaceProduct(id: string, data: Record<string, unknown>) {

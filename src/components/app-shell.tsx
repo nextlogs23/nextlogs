@@ -120,7 +120,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
   const sidebar = (
     <aside className={`portal-sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-mobile-open" : ""} ${adminMode ? "is-admin" : ""}`}>
       <div className="portal-sidebar-brand">
-        {collapsed ? <Link href="/" aria-label="DMB Logs Portal"><Image src="/dmb-logins-logo.png" alt="" width={52} height={52} className="h-12 w-12 object-contain" /></Link> : <Brand light />}
+        {collapsed ? <Link href="/" aria-label="Nextlogs"><Image src="/nextlogs-mark.png" alt="" width={430} height={430} className="h-12 w-12 object-contain" /></Link> : <Brand light />}
         <button onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="portal-mobile-close"><X size={18} /></button>
       </div>
       <div className="portal-sidebar-label">{adminMode ? "Operations" : "Personal workspace"}</div>
@@ -132,7 +132,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
         })}
       </nav>
       <div className="portal-sidebar-footer">
-        {!collapsed && <Link href={adminMode ? "/admin/settings" : "/dashboard/profile"} className="portal-security-note"><UserRound size={16} /><div><b>{auth.currentUser?.displayName || "DMB user"}</b><small>{auth.currentUser?.email || "Secure account"}</small></div></Link>}
+        {!collapsed && <Link href={adminMode ? "/admin/settings" : "/dashboard/profile"} className="portal-security-note"><UserRound size={16} /><div><b>{auth.currentUser?.displayName || "Nextlogs user"}</b><small>{auth.currentUser?.email || "Secure account"}</small></div></Link>}
         <button onClick={logout} className="portal-logout" title={collapsed ? "Log out" : undefined}><LogOut size={17} /><span>Log out</span></button>
       </div>
       <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} className="portal-collapse">{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>
@@ -157,7 +157,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
               {notificationsOpen && <div className="portal-popover portal-notifications"><div className="portal-popover-head"><div><b>Notifications</b><p>Account and service updates</p></div><button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><div className="ui-empty min-h-[190px]"><span className="ui-empty-icon"><Bell size={20} /></span><b className="mt-4 text-sm">You&apos;re all caught up</b><p className="mt-2 text-xs text-[var(--muted)]">New updates will appear here.</p></div></div>}
             </div>
             <div className="relative">
-              <button onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }} className="portal-profile-button"><span>D</span><div><b>{auth.currentUser?.displayName || "DMB user"}</b><small>{adminMode ? "Administrator" : "Customer"}</small></div><ChevronDown size={14} /></button>
+              <button onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }} className="portal-profile-button"><span>N</span><div><b>{auth.currentUser?.displayName || "Nextlogs user"}</b><small>{adminMode ? "Administrator" : "Customer"}</small></div><ChevronDown size={14} /></button>
               {profileOpen && <div className="portal-popover portal-profile-menu"><Link href={adminMode ? "/admin/settings" : "/dashboard/profile"} onClick={() => setProfileOpen(false)}><UserRound size={16} /> Profile & settings</Link><Link href={adminMode ? "/admin/notifications" : "/dashboard/support"} onClick={() => setProfileOpen(false)}><CircleHelp size={16} /> Help & support</Link><button onClick={logout}><LogOut size={16} /> Log out</button></div>}
             </div>
           </div>

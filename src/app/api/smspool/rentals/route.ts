@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) { try { const user = await requi
 export async function POST(request: NextRequest) {
   let reference = ""; let userId = ""; let retailPriceMinor = 0;
   try {
-    const user = await requireUser(request); userId = user.uid; await enforceRateLimit(`smspool_rental_buy_${user.uid}`, 3, 24 * 60 * 60 * 1000); const input = schema.parse(await request.json()); reference = stableSmsPoolReference(user.uid, input.idempotencyKey, "DMB-SPR"); const db = adminDb();
+    const user = await requireUser(request); userId = user.uid; await enforceRateLimit(`smspool_rental_buy_${user.uid}`, 3, 24 * 60 * 60 * 1000); const input = schema.parse(await request.json()); reference = stableSmsPoolReference(user.uid, input.idempotencyKey, "NXL-SPR"); const db = adminDb();
     const existing = await db.collection("smsPoolRentals").doc(reference).get(); if (existing.exists) { const data = existing.data()!; return Response.json({ reference, number: data.phoneNumber || null, status: data.status, idempotent: true }); }
     if (!smsPoolPurchasesEnabled()) throw Object.assign(new Error("Live SMSPool rental purchases are disabled during testing."), { status: 503 });
     const offerSnapshot = await db.collection("smsPoolRentalOffers").doc(input.offerId).get(); const offer = offerSnapshot.data(); if (!offerSnapshot.exists || offer?.userId !== user.uid) throw Object.assign(new Error("This rental offer is unavailable"), { status: 404 }); if ((offer.expiresAt?.toMillis?.() || 0) <= Date.now()) throw Object.assign(new Error("This rental offer expired. Refresh pricing."), { status: 409 }); retailPriceMinor = offer.retailPriceMinor;

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 const telegramUrl = "https://t.me/NEXTLOG_1";
 const telegramChannelUrl = "https://t.me/NEXTLOG23";
-const inviteStorageKey = "dmb-telegram-channel-invite-seen";
+const inviteStorageKey = "nextlogs-telegram-channel-invite-seen";
 
 type TelegramSettings = { liveChatUrl: string; channelUrl: string };
 
@@ -36,7 +36,7 @@ export function TelegramChat() {
       href={settings.liveChatUrl}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with DMB Logs Portal support on Telegram"
+      aria-label="Chat with Nextlogs support on Telegram"
     >
       <span className="telegram-chat-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" role="img">
@@ -108,7 +108,7 @@ export function TelegramChannelInvite() {
           </span>
         </div>
         <div className="telegram-invite-content">
-          <span className="telegram-invite-kicker">DMB community</span>
+          <span className="telegram-invite-kicker">Nextlogs community</span>
           <h2 id="telegram-invite-title">Join our Telegram channel</h2>
           <p>Get important platform announcements, service updates, offers, and helpful tips directly on Telegram.</p>
           <div className="telegram-invite-actions">

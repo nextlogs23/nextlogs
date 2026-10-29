@@ -51,7 +51,7 @@ function price(providerPriceUsd: number) {
 }
 
 export function smsPoolPurchasesEnabled() { return process.env.SMSPOOL_PURCHASES_ENABLED === "true"; }
-export function stableSmsPoolReference(uid: string, idempotencyKey: string, prefix = "DMB-SP") { return `${prefix}-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`; }
+export function stableSmsPoolReference(uid: string, idempotencyKey: string, prefix = "NXL-SP") { return `${prefix}-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`; }
 
 export async function smsPoolCountries(): Promise<SmsPoolCountry[]> {
   const result = await request<Array<{ ID?: number; name?: string; short_name?: string; region?: string }>>("/country/retrieve_all", { method: "GET", form: { show_all: 1 } });

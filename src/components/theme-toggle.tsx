@@ -7,7 +7,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("dmb-theme");
+    const stored = window.localStorage.getItem("nextlogs-theme") || window.localStorage.getItem("dmb-theme");
     const enabled = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
     document.documentElement.classList.toggle("dark", enabled);
     setDark(enabled);
@@ -17,7 +17,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
     const next = !dark;
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
-    window.localStorage.setItem("dmb-theme", next ? "dark" : "light");
+    window.localStorage.setItem("nextlogs-theme", next ? "dark" : "light");
   }
 
   return (

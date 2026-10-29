@@ -66,7 +66,7 @@ export function AdminLogin() {
           <div><LockKeyhole size={17} /><span><b>Server-side authorization</b><small>Every admin request is verified again</small></span></div>
         </div>
       </div>
-      <p className="admin-login-visual-footer"><LockKeyhole size={15} /> DMB Logs Portal administrative console</p>
+      <p className="admin-login-visual-footer"><LockKeyhole size={15} /> Nextlogs administrative console</p>
     </section>
 
     <section className="admin-login-panel">

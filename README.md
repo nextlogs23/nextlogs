@@ -1,4 +1,4 @@
-# DMB Logs Portal
+# Nextlogs
 
 Production-oriented SMS verification and Nigerian VTU platform built with Next.js App Router, TypeScript, Tailwind CSS, Firebase and Paystack. The interface includes the marketing site, Firebase authentication, customer workspace and administrator control centre.
 

@@ -112,7 +112,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
               <button disabled={busy} className="auth2-submit"><span>{busy ? "Please wait…" : copy.button}</span>{!busy && <ArrowRight size={17} />}</button>
             </form>
 
-            {mode === "login" && <p className="auth2-switch">New to DMB Logs Portal? <Link href="/register">Create an account</Link></p>}
+            {mode === "login" && <p className="auth2-switch">New to Nextlogs? <Link href="/register">Create an account</Link></p>}
             {mode === "register" && <p className="auth2-switch">Already have an account? <Link href="/login">Sign in</Link></p>}
             {mode === "forgot" && <p className="auth2-switch"><Link href="/login"><ArrowLeft size={13} /> Back to sign in</Link></p>}
 

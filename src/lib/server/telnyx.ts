@@ -77,7 +77,7 @@ export function telnyxMessagingProfileId() {
 }
 
 export function stableTelnyxReference(uid: string, idempotencyKey: string) {
-  return `DMB-TEL-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`;
+  return `NXL-TEL-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`;
 }
 
 export function normalizeTelnyxError(error: unknown) {
