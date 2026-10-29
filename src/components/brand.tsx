@@ -14,6 +14,16 @@ export function Brand({ light=false }: { light?: boolean }) {
         width={1488}
         height={505}
         priority
+        className="logo-light"
+      />
+      <Image
+        src="/nextlogs-logo-dark.png"
+        alt=""
+        width={1488}
+        height={505}
+        priority
+        aria-hidden="true"
+        className="logo-dark"
       />
     </Link>
   );
