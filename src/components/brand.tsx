@@ -10,17 +10,17 @@ export function Brand({ light=false }: { light?: boolean }) {
     >
       <Image
         src="/nextlogs-logo.png"
-        alt="Nextlogs — Track, Ship, Deliver"
-        width={1488}
-        height={505}
+        alt="NextLogs — SMS Verification Made Easy"
+        width={1200}
+        height={343}
         priority
         className="logo-light"
       />
       <Image
         src="/nextlogs-logo-dark.png"
         alt=""
-        width={1488}
-        height={505}
+        width={1200}
+        height={343}
         priority
         aria-hidden="true"
         className="logo-dark"
