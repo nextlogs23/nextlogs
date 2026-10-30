@@ -38,10 +38,12 @@ test("every marketplace product has a customer details route", () => {
   assert.match(details, /optionId: option\?\.id/);
 });
 
-test("catalog responses do not expose delivery URLs", () => {
+test("catalog responses expose neither delivery URLs nor retired product links", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const publicProjection = helper.slice(helper.indexOf("export function publicMarketplaceProduct"));
   assert.doesNotMatch(publicProjection, /deliveryUrl/);
+  assert.doesNotMatch(publicProjection, /resourceLinks/);
+  assert.doesNotMatch(read("src/components/dashboard/marketplace-product-details.tsx"), /Product links/);
 });
 
 test("purchases atomically validate stock and wallet balance", () => {

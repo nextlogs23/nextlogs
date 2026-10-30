@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, BadgeCheck, ExternalLink, Link2, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, ExternalLink, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { ProductGeneratedIcon } from "@/components/marketplace/product-generated-icon";
 
 type ProductOption = { id: string; title: string; priceMinor: number; purchaseUrl: string | null; displayOrder: number };
-type Product = { id: string; title: string; description: string; category: string; kind: string; priceMinor: number; stock: number; featured: boolean; badge?: string | null; iconUrl?: string | null; previewBullets: string[]; resourceLinks: Array<{ label: string; url: string }>; hasOptions: boolean; options: ProductOption[]; fulfillment: "instant" | "manual" };
+type Product = { id: string; title: string; description: string; category: string; kind: string; priceMinor: number; stock: number; featured: boolean; badge?: string | null; iconUrl?: string | null; previewBullets: string[]; hasOptions: boolean; options: ProductOption[]; fulfillment: "instant" | "manual" };
 type Order = { reference: string; title: string; priceMinor: number; status: string };
 
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
@@ -52,7 +52,6 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
       </article>)}</div> : product.hasOptions ? <div className="marketplace-options-empty"><PackageX size={21} /><div><h3>No active options</h3><p>The administrator has temporarily disabled every option for this product.</p></div></div> : <div className="marketplace-legacy-purchase"><div><small>Product price</small><strong>{money(product.priceMinor)}</strong><p>The server will verify the current price, stock, and wallet balance before processing.</p></div><button disabled={!canPurchase || buying !== null} onClick={() => void purchase()} className="ui-button-primary">{buying === "base" ? <LoaderCircle className="animate-spin" size={15} /> : <ShoppingBag size={15} />}{canPurchase ? "Purchase with wallet" : "Out of stock"}</button></div>}
     </section>
 
-    {product.resourceLinks.length ? <section className="marketplace-detail-links"><header><span><Link2 size={15} /></span><div><h2>Product links</h2><p>Resources supplied by the marketplace administrator.</p></div></header><div>{product.resourceLinks.map((link) => <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer"><span><b>{link.label}</b><small>{hostname(link.url)}</small></span><ExternalLink size={14} /></a>)}</div></section> : null}
     {lastOrder && <section className="marketplace-order-success"><span><BadgeCheck size={20} /></span><div><h3>{lastOrder.status === "successful" ? "Purchase completed" : "Order received"}</h3><p>{lastOrder.title} · {money(lastOrder.priceMinor)} · {lastOrder.reference}</p></div><Link href="/dashboard/marketplace#marketplace-orders">View purchases <ArrowRight size={14} /></Link></section>}
   </div>;
 }

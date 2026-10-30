@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { ProductGeneratedIcon } from "@/components/marketplace/product-generated-icon";
 
-type Product = { id: string; title: string; description: string; category: "social_assets" | "digital_products"; kind: string; priceMinor: number; stock: number; featured: boolean; badge?: string | null; iconUrl?: string | null; previewBullets: string[]; resourceLinks: Array<{ label: string; url: string }>; hasOptions: boolean; options: Array<{ id: string; priceMinor: number }>; fulfillment: "instant" | "manual" };
+type Product = { id: string; title: string; description: string; category: "social_assets" | "digital_products"; kind: string; priceMinor: number; stock: number; featured: boolean; badge?: string | null; iconUrl?: string | null; previewBullets: string[]; hasOptions: boolean; options: Array<{ id: string; priceMinor: number }>; fulfillment: "instant" | "manual" };
 type Order = { id?: string; reference: string; productId: string; title: string; category: string; kind: string; priceMinor: number; status: string; fulfillment: string; deliveryUrl?: string | null; createdAt?: string | null };
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const categoryLabel = (category: string) => category === "social_assets" ? "Social media assets" : "Digital products";

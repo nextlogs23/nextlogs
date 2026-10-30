@@ -29,11 +29,6 @@ export function publicMarketplaceProduct(id: string, data: Record<string, unknow
     badge: data.badge ? String(data.badge) : null,
     iconUrl: data.iconUrl ? String(data.iconUrl) : null,
     previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets.map(String).slice(0, 6) : [],
-    resourceLinks: Array.isArray(data.resourceLinks) ? data.resourceLinks.flatMap((item) => {
-      if (!item || typeof item !== "object") return [];
-      const link = item as { label?: unknown; url?: unknown };
-      return typeof link.label === "string" && typeof link.url === "string" && /^https:\/\//i.test(link.url) ? [{ label: link.label, url: link.url }] : [];
-    }).slice(0, 12) : [],
     hasOptions: Array.isArray(data.options) && data.options.length > 0,
     options: Array.isArray(data.options) ? data.options.flatMap((item) => {
       if (!item || typeof item !== "object") return [];
