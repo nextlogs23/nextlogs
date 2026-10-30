@@ -10,6 +10,7 @@ const productSchema = z.object({
   category: z.enum(marketplaceCategories), kind: z.enum(marketplaceKinds),
   priceMinor: z.number().int().min(100), providerCostMinor: z.number().int().min(0).optional(), stock: z.number().int().min(0).max(100000),
   featured: z.boolean().default(false), badge: z.string().trim().max(24).optional(), previewBullets: z.array(z.string().trim().min(2).max(100)).max(6),
+  iconUrl: z.string().url().startsWith("https://").max(2000).optional(),
   fulfillment: z.enum(marketplaceFulfillment), deliveryUrl: z.string().url().startsWith("https://").optional(), active: z.boolean().default(false),
 }).superRefine((value, context) => { if (value.fulfillment === "instant" && !value.deliveryUrl) context.addIssue({ code: "custom", message: "Instant products require a secure delivery URL", path: ["deliveryUrl"] }); });
 const actionSchema = z.discriminatedUnion("action", [
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request); const db = adminDb();
     const [products, orders] = await Promise.all([db.collection("marketplaceProducts").orderBy("createdAt", "desc").limit(100).get(), db.collection("marketplaceOrders").orderBy("createdAt", "desc").limit(100).get()]);
     return Response.json({
-      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, description: data.description, category: data.category, kind: data.kind, priceMinor: data.priceMinor, providerCostMinor: data.providerCostMinor ?? null, stock: data.stock, active: data.active, featured: Boolean(data.featured), badge: data.badge ?? null, previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets : [], fulfillment: data.fulfillment, deliveryUrl: data.deliveryUrl ?? null, createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt), archivedAt: iso(data.archivedAt) }; }),
+      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, description: data.description, category: data.category, kind: data.kind, priceMinor: data.priceMinor, providerCostMinor: data.providerCostMinor ?? null, stock: data.stock, active: data.active, featured: Boolean(data.featured), badge: data.badge ?? null, iconUrl: data.iconUrl ?? null, previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets : [], fulfillment: data.fulfillment, deliveryUrl: data.deliveryUrl ?? null, createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt), archivedAt: iso(data.archivedAt) }; }),
       orders: orders.docs.map((doc) => { const data = doc.data(); return { id: doc.id, reference: data.reference, userId: data.userId, productId: data.productId, title: data.title, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, createdAt: iso(data.createdAt) }; }),
     });
   } catch (error) { return routeError(error); }
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     assertPermittedMarketplaceProduct(input.title, input.description, input.previewBullets.join(" "));
     const db = adminDb(); const productRef = db.collection("marketplaceProducts").doc(); const auditRef = db.collection("adminAuditLogs").doc();
     await db.runTransaction(async (transaction) => {
-      transaction.create(productRef, { ...input, providerCostMinor: input.providerCostMinor ?? null, badge: input.badge || null, deliveryUrl: input.deliveryUrl || null, archivedAt: null, createdBy: admin.uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+      transaction.create(productRef, { ...input, providerCostMinor: input.providerCostMinor ?? null, badge: input.badge || null, iconUrl: input.iconUrl || null, deliveryUrl: input.deliveryUrl || null, archivedAt: null, createdBy: admin.uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
       transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_product_created", targetId: productRef.id, reason: "New marketplace catalogue item", metadata: { title: input.title, active: input.active }, createdAt: FieldValue.serverTimestamp() });
     });
     return Response.json({ id: productRef.id, created: true });
@@ -62,7 +63,7 @@ export async function PATCH(request: NextRequest) {
     if (input.action === "edit") {
       assertPermittedMarketplaceProduct(input.product.title, input.product.description, input.product.previewBullets.join(" "));
       const productRef = db.collection("marketplaceProducts").doc(input.productId); const auditRef = db.collection("adminAuditLogs").doc();
-      await db.runTransaction(async (transaction) => { const current = await transaction.get(productRef); if (!current.exists) throw Object.assign(new Error("Product not found"), { status: 404 }); if (current.data()?.archivedAt) throw Object.assign(new Error("Restore this product before editing it"), { status: 409 }); transaction.update(productRef, { ...input.product, providerCostMinor: input.product.providerCostMinor ?? null, badge: input.product.badge || null, deliveryUrl: input.product.deliveryUrl || null, editedBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_product_edited", targetId: input.productId, reason: "Catalogue product details updated", metadata: { title: input.product.title, active: input.product.active }, createdAt: FieldValue.serverTimestamp() }); });
+      await db.runTransaction(async (transaction) => { const current = await transaction.get(productRef); if (!current.exists) throw Object.assign(new Error("Product not found"), { status: 404 }); if (current.data()?.archivedAt) throw Object.assign(new Error("Restore this product before editing it"), { status: 409 }); transaction.update(productRef, { ...input.product, providerCostMinor: input.product.providerCostMinor ?? null, badge: input.product.badge || null, iconUrl: input.product.iconUrl || null, deliveryUrl: input.product.deliveryUrl || null, editedBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_product_edited", targetId: input.productId, reason: "Catalogue product details updated", metadata: { title: input.product.title, active: input.product.active }, createdAt: FieldValue.serverTimestamp() }); });
       return Response.json({ updated: true });
     }
     if (input.action === "archive") {

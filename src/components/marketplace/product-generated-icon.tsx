@@ -21,6 +21,7 @@ type ProductGeneratedIconProps = {
   title: string;
   category: string;
   kind: string;
+  iconUrl?: string | null;
 };
 
 const palettes = [
@@ -66,7 +67,16 @@ function monogram(title: string) {
   return `${words[0][0] ?? ""}${words.length > 1 ? words.at(-1)?.[0] ?? "" : words[0][1] ?? ""}`.toUpperCase();
 }
 
-export function ProductGeneratedIcon({ id, title, category, kind }: ProductGeneratedIconProps) {
+export function ProductGeneratedIcon({ id, title, category, kind, iconUrl }: ProductGeneratedIconProps) {
+  if (iconUrl) {
+    return (
+      <span className="product-generated-icon product-generated-icon--custom">
+        {/* Firebase download URLs are administrator-uploaded and dynamically hosted. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={iconUrl} alt={`${title} icon`} />
+      </span>
+    );
+  }
   const seed = hash(`${id}:${title}:${category}:${kind}`);
   const palette = palettes[seed % palettes.length];
   const style = {

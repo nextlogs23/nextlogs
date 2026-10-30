@@ -27,6 +27,7 @@ export function publicMarketplaceProduct(id: string, data: Record<string, unknow
     stock: data.stock,
     featured: Boolean(data.featured),
     badge: data.badge ? String(data.badge) : null,
+    iconUrl: data.iconUrl ? String(data.iconUrl) : null,
     previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets.map(String).slice(0, 6) : [],
     fulfillment: data.fulfillment,
   };
