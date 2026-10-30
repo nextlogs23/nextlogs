@@ -6,6 +6,7 @@ import { requireAdmin, routeError } from "@/lib/server/auth";
 export const runtime = "nodejs";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const blobStoreId = process.env.NEXTLOGS_NEW_STORE_ID || process.env.BLOB_STORE_ID;
 const allowedExtensions = new Set(["pdf", "zip", "docx", "xlsx", "pptx", "txt", "csv", "png", "jpg", "jpeg", "webp"]);
 const allowedTypes = new Set([
   "application/pdf", "application/zip", "application/x-zip-compressed",
@@ -32,7 +33,13 @@ export async function POST(request: NextRequest) {
 
     const bytes = Buffer.from(await upload.arrayBuffer());
     const pathname = `marketplace/product-files/${Date.now()}-${randomUUID()}.${extension}`;
-    const blob = await put(pathname, bytes, { access: "private", contentType: upload.type, addRandomSuffix: false, cacheControlMaxAge: 60 * 60 });
+    const blob = await put(pathname, bytes, {
+      access: "private",
+      contentType: upload.type,
+      addRandomSuffix: false,
+      cacheControlMaxAge: 60 * 60,
+      storeId: blobStoreId,
+    });
     return Response.json({ file: { pathname: blob.pathname, fileName, contentType: upload.type, size: upload.size, uploadedBy: admin.uid } });
   } catch (error) {
     return routeError(error);
