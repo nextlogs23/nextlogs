@@ -16,7 +16,6 @@ import {
   CircleHelp,
   CreditCard,
   Gauge,
-  Grid2X2,
   LogOut,
   Menu,
   MessageSquareText,
@@ -62,10 +61,16 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [ready, setReady] = useState(adminLoginRoute || (!firebaseConfigured && !adminMode));
   const router = useRouter();
   const nav = adminMode ? adminNav : customerNav;
   const current = useMemo(() => nav.find(([, slug]) => path === pathFor(adminMode, slug))?.[0] || (adminMode ? "Administration" : "Dashboard"), [path, nav, adminMode]);
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return query ? nav.filter(([label]) => label.toLowerCase().includes(query)).slice(0, 6) : nav.slice(0, 5);
+  }, [nav, searchQuery]);
 
   useEffect(() => {
     if (adminLoginRoute) {
@@ -109,6 +114,18 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.key === "/" && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
+        event.preventDefault();
+        document.getElementById("portal-navigation-search")?.focus();
+      }
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
   async function logout() {
     await signOut(auth);
     router.push("/login");
@@ -116,6 +133,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
 
   if (!ready) return <div className="portal-loading"><span /><p>Securing your workspace…</p></div>;
   if (adminLoginRoute) return <>{children}</>;
+  const avatarInitial = (auth.currentUser?.displayName || auth.currentUser?.email || "N").trim().charAt(0).toUpperCase();
 
   const sidebar = (
     <aside className={`portal-sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-mobile-open" : ""} ${adminMode ? "is-admin" : ""}`}>
@@ -150,14 +168,14 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
             <div className="min-w-0"><p className="portal-topbar-kicker">{adminMode ? "Admin console" : "Customer portal"}</p><h1 className="truncate">{current}</h1></div>
           </div>
           <div className="portal-topbar-actions">
-            <label className="portal-search"><Search size={15} /><input placeholder={adminMode ? "Search admin records" : "Search workspace"} aria-label={adminMode ? "Search admin records" : "Search workspace"} /></label>
+            <div className="portal-search-wrap"><label className="portal-search"><Search size={15} /><input id="portal-navigation-search" value={searchQuery} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 140)} onChange={(event) => { setSearchQuery(event.target.value); setSearchOpen(true); }} placeholder="Go to a page…" aria-label="Search workspace pages" /><kbd>/</kbd></label>{searchOpen && <div className="portal-search-results"><div><span>{searchQuery ? "Matching pages" : "Quick navigation"}</span><small>{searchResults.length} result{searchResults.length === 1 ? "" : "s"}</small></div>{searchResults.length ? searchResults.map(([label, slug, Icon]) => <Link key={label} href={pathFor(adminMode, slug)} onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearchOpen(false); setSearchQuery(""); }}><Icon size={16} /><span><b>{label}</b><small>{adminMode ? "Admin console" : "Customer workspace"}</small></span><ChevronRight size={14} /></Link>) : <p>No page matches “{searchQuery}”.</p>}</div>}</div>
             <ThemeToggle compact />
             <div className="relative">
               <button onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }} className="portal-icon-button" aria-label="Notifications"><Bell size={17} /><span /></button>
               {notificationsOpen && <div className="portal-popover portal-notifications"><div className="portal-popover-head"><div><b>Notifications</b><p>Account and service updates</p></div><button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><div className="ui-empty min-h-[190px]"><span className="ui-empty-icon"><Bell size={20} /></span><b className="mt-4 text-sm">You&apos;re all caught up</b><p className="mt-2 text-xs text-[var(--muted)]">New updates will appear here.</p></div></div>}
             </div>
             <div className="relative">
-              <button onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }} className="portal-profile-button"><span>N</span><div><b>{auth.currentUser?.displayName || "Nextlogs user"}</b><small>{adminMode ? "Administrator" : "Customer"}</small></div><ChevronDown size={14} /></button>
+              <button onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }} className="portal-profile-button"><span>{avatarInitial}</span><div><b>{auth.currentUser?.displayName || "Nextlogs user"}</b><small>{adminMode ? "Administrator" : "Customer"}</small></div><ChevronDown size={14} /></button>
               {profileOpen && <div className="portal-popover portal-profile-menu"><Link href={adminMode ? "/admin/settings" : "/dashboard/profile"} onClick={() => setProfileOpen(false)}><UserRound size={16} /> Profile & settings</Link><Link href={adminMode ? "/admin/notifications" : "/dashboard/support"} onClick={() => setProfileOpen(false)}><CircleHelp size={16} /> Help & support</Link><button onClick={logout}><LogOut size={16} /> Log out</button></div>}
             </div>
           </div>
