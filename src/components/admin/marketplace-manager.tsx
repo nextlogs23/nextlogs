@@ -1,25 +1,28 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ArchiveRestore, Boxes, CheckCircle2, Copy, ExternalLink, Eye, Link2, LoaderCircle, Package, PackagePlus, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Star, Store, Trash2, UploadCloud, X } from "lucide-react";
+import { ArchiveRestore, ArrowDown, ArrowUp, Boxes, CheckCircle2, Copy, ExternalLink, Eye, Link2, LoaderCircle, Package, PackagePlus, Pencil, Plus, RefreshCw, RotateCcw, Search, Sparkles, Star, Store, Trash2, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { ProductGeneratedIcon } from "@/components/marketplace/product-generated-icon";
 
+type ProductOption = { id: string; title: string; priceMinor: number; purchaseUrl: string | null; displayOrder: number; active: boolean };
+type ProductOptionForm = { id: string; title: string; price: string; purchaseUrl: string; active: boolean };
 type Product = {
   id: string; title: string; description: string; category: string; kind: string; priceMinor: number; providerCostMinor: number | null;
   stock: number; active: boolean; featured: boolean; badge: string | null; iconUrl: string | null; previewBullets: string[]; fulfillment: string;
-  resourceLinks: Array<{ label: string; url: string }>; deliveryUrl: string | null; createdAt?: string | null; updatedAt?: string | null; archivedAt?: string | null;
+  resourceLinks: Array<{ label: string; url: string }>; options: ProductOption[]; deliveryUrl: string | null; createdAt?: string | null; updatedAt?: string | null; archivedAt?: string | null;
 };
 type Order = { id: string; reference: string; userId: string; productId: string; title: string; priceMinor: number; status: string; fulfillment: string; createdAt?: string | null };
-type ProductForm = { title: string; description: string; category: string; kind: string; price: string; cost: string; stock: string; fulfillment: string; deliveryUrl: string; bullets: string; resourceLinksText: string; badge: string; iconUrl: string; active: boolean; featured: boolean };
+type ProductForm = { title: string; description: string; category: string; kind: string; price: string; cost: string; stock: string; fulfillment: string; deliveryUrl: string; bullets: string; resourceLinksText: string; options: ProductOptionForm[]; badge: string; iconUrl: string; active: boolean; featured: boolean };
+type ProductFormUpdater = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => void;
 type ProductStatus = "all" | "live" | "hidden" | "archived";
 
-const emptyForm: ProductForm = { title: "", description: "", category: "social_assets", kind: "download", price: "", cost: "", stock: "", fulfillment: "instant", deliveryUrl: "", bullets: "", resourceLinksText: "", badge: "", iconUrl: "", active: false, featured: false };
+const emptyForm: ProductForm = { title: "", description: "", category: "social_assets", kind: "download", price: "", cost: "", stock: "", fulfillment: "instant", deliveryUrl: "", bullets: "", resourceLinksText: "", options: [], badge: "", iconUrl: "", active: false, featured: false };
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const parseResourceLinks = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 12).map((line, index) => { const divider = line.indexOf("|"); return divider >= 0 ? { label: line.slice(0, divider).trim(), url: line.slice(divider + 1).trim() } : { label: `Link ${index + 1}`, url: line }; });
-const productPayload = (form: ProductForm) => ({ title: form.title, description: form.description, category: form.category, kind: form.kind, priceMinor: Math.round(Number(form.price) * 100), providerCostMinor: form.cost ? Math.round(Number(form.cost) * 100) : undefined, stock: Number(form.stock), fulfillment: form.fulfillment, deliveryUrl: form.fulfillment === "instant" && form.deliveryUrl ? form.deliveryUrl : undefined, previewBullets: form.bullets.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 6), resourceLinks: parseResourceLinks(form.resourceLinksText), badge: form.badge || undefined, iconUrl: form.iconUrl || undefined, active: form.active, featured: form.featured });
-const formFromProduct = (product: Product): ProductForm => ({ title: product.title, description: product.description, category: product.category, kind: product.kind, price: String(product.priceMinor / 100), cost: product.providerCostMinor == null ? "" : String(product.providerCostMinor / 100), stock: String(product.stock), fulfillment: product.fulfillment, deliveryUrl: product.deliveryUrl || "", bullets: product.previewBullets.join(", "), resourceLinksText: (product.resourceLinks || []).map((link) => `${link.label} | ${link.url}`).join("\n"), badge: product.badge || "", iconUrl: product.iconUrl || "", active: product.active, featured: product.featured });
+const productPayload = (form: ProductForm) => ({ title: form.title, description: form.description, category: form.category, kind: form.kind, priceMinor: Math.round(Number(form.price) * 100), providerCostMinor: form.cost ? Math.round(Number(form.cost) * 100) : undefined, stock: Number(form.stock), fulfillment: form.fulfillment, deliveryUrl: form.fulfillment === "instant" && form.deliveryUrl ? form.deliveryUrl : undefined, previewBullets: form.bullets.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 6), resourceLinks: parseResourceLinks(form.resourceLinksText), options: form.options.map((option, displayOrder) => ({ id: option.id, title: option.title, priceMinor: Math.round(Number(option.price) * 100), purchaseUrl: option.purchaseUrl.trim() || null, displayOrder, active: option.active })), badge: form.badge || undefined, iconUrl: form.iconUrl || undefined, active: form.active, featured: form.featured });
+const formFromProduct = (product: Product): ProductForm => ({ title: product.title, description: product.description, category: product.category, kind: product.kind, price: String(product.priceMinor / 100), cost: product.providerCostMinor == null ? "" : String(product.providerCostMinor / 100), stock: String(product.stock), fulfillment: product.fulfillment, deliveryUrl: product.deliveryUrl || "", bullets: product.previewBullets.join(", "), resourceLinksText: (product.resourceLinks || []).map((link) => `${link.label} | ${link.url}`).join("\n"), options: [...(product.options || [])].sort((a, b) => a.displayOrder - b.displayOrder).map((option) => ({ id: option.id, title: option.title, price: String(option.priceMinor / 100), purchaseUrl: option.purchaseUrl || "", active: option.active })), badge: product.badge || "", iconUrl: product.iconUrl || "", active: product.active, featured: product.featured });
 
 async function prepareProductIcon(file: File) {
   const source = URL.createObjectURL(file);
@@ -36,7 +39,7 @@ async function prepareProductIcon(file: File) {
   } finally { URL.revokeObjectURL(source); }
 }
 
-function ProductIconField({ form, update }: { form: ProductForm; update: (key: keyof ProductForm, value: string | boolean) => void }) {
+function ProductIconField({ form, update }: { form: ProductForm; update: ProductFormUpdater }) {
   const [uploading, setUploading] = useState(false);
   async function upload(file?: File) {
     if (!file) return;
@@ -54,7 +57,24 @@ function ProductIconField({ form, update }: { form: ProductForm; update: (key: k
   return <div className="admin-market-icon-field"><div className="admin-market-icon-preview"><ProductGeneratedIcon id={`draft:${form.title}`} title={form.title || "New product"} category={form.category} kind={form.kind} iconUrl={form.iconUrl || null} /></div><div><span>Product icon</span><b>{form.iconUrl ? "Custom icon uploaded" : "Automatically generated"}</b><small>PNG, JPEG, or WebP images are securely optimized before upload.</small><div><label className={uploading ? "is-loading" : ""}>{uploading ? <LoaderCircle className="animate-spin" size={14} /> : <UploadCloud size={14} />}{uploading ? "Uploading..." : form.iconUrl ? "Replace icon" : "Upload icon"}<input disabled={uploading} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>{form.iconUrl && <button type="button" onClick={() => update("iconUrl", "")}><Trash2 size={13} /> Use generated icon</button>}</div></div></div>;
 }
 
-function ProductFields({ form, update }: { form: ProductForm; update: (key: keyof ProductForm, value: string | boolean) => void }) {
+function ProductOptionsField({ options, onChange }: { options: ProductOptionForm[]; onChange: (options: ProductOptionForm[]) => void }) {
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  function addOption() { onChange([...options, { id: crypto.randomUUID(), title: "", price: "", purchaseUrl: "", active: true }]); }
+  function updateOption<K extends keyof ProductOptionForm>(id: string, key: K, value: ProductOptionForm[K]) { onChange(options.map((option) => option.id === id ? { ...option, [key]: value } : option)); }
+  function moveOption(index: number, direction: -1 | 1) { const target = index + direction; if (target < 0 || target >= options.length) return; const next = [...options]; [next[index], next[target]] = [next[target], next[index]]; onChange(next); }
+  function confirmDelete() { if (!deleteId) return; onChange(options.filter((option) => option.id !== deleteId)); setDeleteId(null); toast.success("Product option removed. Save the product to keep this change."); }
+  return <section className="admin-product-options">
+    <header><div><span>Product options</span><h3>Prices and purchase paths</h3><p>Add variations customers can compare on the product details page. Leave the purchase link blank to use NextLogs wallet checkout.</p></div><button type="button" onClick={addOption}><Plus size={14} /> Add option</button></header>
+    {options.length ? <div className="admin-product-options-list">{options.map((option, index) => <article key={option.id} className={option.active ? "" : "is-inactive"}>
+      <div className="admin-product-option-order"><b>{String(index + 1).padStart(2, "0")}</b><div><button type="button" disabled={index === 0} onClick={() => moveOption(index, -1)} aria-label={`Move ${option.title || `option ${index + 1}`} up`}><ArrowUp size={13} /></button><button type="button" disabled={index === options.length - 1} onClick={() => moveOption(index, 1)} aria-label={`Move ${option.title || `option ${index + 1}`} down`}><ArrowDown size={13} /></button></div></div>
+      <div className="admin-product-option-fields"><label>Option title<input required value={option.title} onChange={(event) => updateOption(option.id, "title", event.target.value)} placeholder="USA Standard" /></label><label>Amount / price<div className="admin-currency-input"><span aria-hidden="true">₦</span><input required min="1" step="0.01" inputMode="decimal" type="number" value={option.price} onChange={(event) => updateOption(option.id, "price", event.target.value)} placeholder="0.00" /></div></label><label className="admin-product-option-link">Purchase link <small>Optional for wallet checkout</small><input type="url" value={option.purchaseUrl} onChange={(event) => updateOption(option.id, "purchaseUrl", event.target.value)} placeholder="https://example.com/product/option" /></label></div>
+      <div className="admin-product-option-actions"><label><input type="checkbox" checked={option.active} onChange={(event) => updateOption(option.id, "active", event.target.checked)} /><span>{option.active ? "Active" : "Inactive"}</span></label><button type="button" onClick={() => setDeleteId(option.id)}><Trash2 size={13} /> Delete</button></div>
+    </article>)}</div> : <div className="admin-product-options-empty"><Link2 size={19} /><div><b>No product options yet</b><p>The product will keep its current single-price purchase flow.</p></div></div>}
+    {deleteId && <div className="modal-layer admin-option-delete-layer"><button type="button" className="modal-backdrop" onClick={() => setDeleteId(null)} aria-label="Cancel option deletion" /><div className="admin-option-delete"><span><Trash2 size={20} /></span><h3>Delete this option?</h3><p>This removes the option from the form. The change becomes permanent only after you save the product.</p><div><button type="button" className="admin3-button secondary" onClick={() => setDeleteId(null)}>Keep option</button><button type="button" className="admin3-button danger" onClick={confirmDelete}>Delete option</button></div></div></div>}
+  </section>;
+}
+
+function ProductFields({ form, update }: { form: ProductForm; update: ProductFormUpdater }) {
   return <>
     <ProductIconField form={form} update={update} />
     <div className="admin3-form-grid">
@@ -70,7 +90,8 @@ function ProductFields({ form, update }: { form: ProductForm; update: (key: keyo
     <label className="admin-market-wide">Description<textarea required value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Explain exactly what the customer receives." /></label>
     <label className="admin-market-wide">Preview points<input value={form.bullets} onChange={(event) => update("bullets", event.target.value)} placeholder="Editable files, Mobile ready, Commercial licence" /></label>
     <label className="admin-market-wide admin-market-links-field">Product links <span>Visible to customers in the product preview. Add one per line as: Label | https://example.com</span><textarea value={form.resourceLinksText} onChange={(event) => update("resourceLinksText", event.target.value)} placeholder={"Official website | https://example.com\nView sample | https://example.com/sample\nDocumentation | https://example.com/docs"} /></label>
-    {form.fulfillment === "instant" && <label className="admin-market-wide">Secure HTTPS delivery URL<input required type="url" value={form.deliveryUrl} onChange={(event) => update("deliveryUrl", event.target.value)} placeholder="https://..." /></label>}
+    <ProductOptionsField options={form.options} onChange={(options) => update("options", options)} />
+    {form.fulfillment === "instant" && <label className="admin-market-wide">Secure HTTPS delivery URL <span>{form.options.length && form.options.every((option) => option.purchaseUrl.trim()) ? "Optional when every active option uses an external purchase link." : "Required for instant NextLogs wallet delivery."}</span><input required={!form.options.length || form.options.some((option) => option.active && !option.purchaseUrl.trim())} type="url" value={form.deliveryUrl} onChange={(event) => update("deliveryUrl", event.target.value)} placeholder="https://..." /></label>}
     <div className="admin-market-switches"><label><input type="checkbox" checked={form.featured} onChange={(event) => update("featured", event.target.checked)} /><span><b>Featured product</b><small>Highlight this item in the catalogue</small></span></label><label><input type="checkbox" checked={form.active} onChange={(event) => update("active", event.target.checked)} /><span><b>Publish product</b><small>Make it visible to customers immediately</small></span></label></div>
   </>;
 }
@@ -81,8 +102,8 @@ export function MarketplaceManager() {
   const [editTarget, setEditTarget] = useState<Product | null>(null); const [editForm, setEditForm] = useState<ProductForm>(emptyForm); const [previewTarget, setPreviewTarget] = useState<Product | null>(null); const [deleteTarget, setDeleteTarget] = useState<Product | null>(null); const [deleteReason, setDeleteReason] = useState("");
   const load = () => { setLoading(true); return api<{ products: Product[]; orders: Order[] }>("/api/admin/marketplace").then((data) => { setProducts(data.products); setOrders(data.orders); }).catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load marketplace")).finally(() => setLoading(false)); };
   useEffect(() => { void load(); }, []);
-  const update = (key: keyof ProductForm, value: string | boolean) => setForm((current) => ({ ...current, [key]: value }));
-  const updateEdit = (key: keyof ProductForm, value: string | boolean) => setEditForm((current) => ({ ...current, [key]: value }));
+  const update: ProductFormUpdater = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const updateEdit: ProductFormUpdater = (key, value) => setEditForm((current) => ({ ...current, [key]: value }));
   const filteredProducts = useMemo(() => products.filter((product) => {
     const matchesQuery = `${product.title} ${product.description} ${product.category} ${product.kind}`.toLowerCase().includes(query.toLowerCase().trim());
     const matchesStatus = status === "all" || (status === "live" && product.active && !product.archivedAt) || (status === "hidden" && !product.active && !product.archivedAt) || (status === "archived" && Boolean(product.archivedAt));

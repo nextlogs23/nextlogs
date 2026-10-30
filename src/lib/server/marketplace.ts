@@ -34,6 +34,14 @@ export function publicMarketplaceProduct(id: string, data: Record<string, unknow
       const link = item as { label?: unknown; url?: unknown };
       return typeof link.label === "string" && typeof link.url === "string" && /^https:\/\//i.test(link.url) ? [{ label: link.label, url: link.url }] : [];
     }).slice(0, 12) : [],
+    hasOptions: Array.isArray(data.options) && data.options.length > 0,
+    options: Array.isArray(data.options) ? data.options.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      const option = item as { id?: unknown; title?: unknown; priceMinor?: unknown; purchaseUrl?: unknown; displayOrder?: unknown; active?: unknown };
+      if (option.active !== true || typeof option.id !== "string" || typeof option.title !== "string" || typeof option.priceMinor !== "number" || !Number.isSafeInteger(option.priceMinor) || option.priceMinor < 100) return [];
+      const purchaseUrl = typeof option.purchaseUrl === "string" && /^https?:\/\//i.test(option.purchaseUrl) ? option.purchaseUrl : null;
+      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), purchaseUrl, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
+    }).sort((a, b) => a.displayOrder - b.displayOrder || a.title.localeCompare(b.title)).slice(0, 100) : [],
     fulfillment: data.fulfillment,
   };
 }

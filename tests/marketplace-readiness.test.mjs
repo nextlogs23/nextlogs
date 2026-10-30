@@ -6,8 +6,36 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 test("marketplace customer and admin routes require authenticated principals", () => {
   assert.match(read("src/app/api/marketplace/products/route.ts"), /requireUser/);
+  assert.match(read("src/app/api/marketplace/products/[id]/route.ts"), /requireUser/);
   assert.match(read("src/app/api/marketplace/orders/route.ts"), /requireUser/);
   assert.match(read("src/app/api/admin/marketplace/route.ts"), /requireAdmin/);
+});
+
+test("product options are validated, ordered, and limited to active public records", () => {
+  const admin = read("src/app/api/admin/marketplace/route.ts");
+  const helper = read("src/lib/server/marketplace.ts");
+  assert.match(admin, /productOptionSchema/);
+  assert.match(admin, /Every product option must have a unique ID/);
+  assert.match(admin, /Purchase links must use HTTP or HTTPS/);
+  assert.match(helper, /option\.active !== true/);
+  assert.match(helper, /sort\(\(a, b\) => a\.displayOrder - b\.displayOrder/);
+});
+
+test("internal option checkout validates option state and server-side price", () => {
+  const route = read("src/app/api/marketplace/orders/route.ts");
+  assert.match(route, /This product option is disabled or unavailable/);
+  assert.match(route, /const priceMinor = selectedOption\?\.priceMinor \?\? product\.priceMinor/);
+  assert.match(route, /External options must be opened using their purchase link/);
+  assert.match(route, /optionId: selectedOption\?\.id/);
+});
+
+test("every marketplace product has a customer details route", () => {
+  const details = read("src/components/dashboard/marketplace-product-details.tsx");
+  const catalogue = read("src/components/dashboard/marketplace-workspace.tsx");
+  assert.match(catalogue, /dashboard\/marketplace\/\$\{product\.id\}/);
+  assert.match(details, /product\.options\.map/);
+  assert.match(details, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(details, /optionId: option\?\.id/);
 });
 
 test("catalog responses do not expose delivery URLs", () => {
