@@ -138,7 +138,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
   const sidebar = (
     <aside className={`portal-sidebar ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "is-mobile-open" : ""} ${adminMode ? "is-admin" : ""}`}>
       <div className="portal-sidebar-brand">
-        {collapsed ? <Link href="/" aria-label="Nextlogs" className={`theme-mark h-12 w-12 ${adminMode ? "is-light" : ""}`}><Image src="/nextlogs-mark.png" alt="" width={430} height={430} className="logo-light h-12 w-12 object-contain" /><Image src="/nextlogs-mark-dark.png" alt="" aria-hidden="true" width={430} height={430} className="logo-dark h-12 w-12 object-contain" /></Link> : <Brand light={adminMode} />}
+        {collapsed ? <Link href="/" aria-label="Nextlogs" className="theme-mark is-light h-12 w-12"><Image src="/nextlogs-mark.png" alt="" width={430} height={430} className="logo-light h-12 w-12 object-contain" /><Image src="/nextlogs-mark-dark.png" alt="" aria-hidden="true" width={430} height={430} className="logo-dark h-12 w-12 object-contain" /></Link> : <Brand light />}
         <button onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="portal-mobile-close"><X size={18} /></button>
       </div>
       <div className="portal-sidebar-label">{adminMode ? "Operations" : "Personal workspace"}</div>
