@@ -464,3 +464,6 @@ html.dark .marketplace-product-preview .marketplace-card-art{background:linear-g
 @media(max-width:1280px){.marketplace-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){.marketplace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.marketplace-grid{grid-template-columns:1fr;gap:12px}.marketplace-product-preview{min-height:0}.marketplace-product-preview .marketplace-card-art{height:145px}.marketplace-product-preview .marketplace-card-art>span{width:64px;height:64px}.marketplace-product-preview .marketplace-card-body{padding:16px}.marketplace-card-points>span:nth-child(n+2){display:flex}}
+.admin-option-download{grid-column:2/-1;margin-top:0;padding:11px}.admin-option-download .admin-product-download-icon{width:38px;height:38px}.admin-option-download .admin-product-download-actions label,.admin-option-download .admin-product-download-actions button{min-height:32px;font-size:7px}
+@media(max-width:900px){.admin-option-download{grid-column:1/-1}}
+@media(max-width:620px){.admin-option-download{grid-column:auto}.admin-option-download .admin-product-download-actions{grid-column:1/-1}}

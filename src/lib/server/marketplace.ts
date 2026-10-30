@@ -28,16 +28,17 @@ export function publicMarketplaceProduct(id: string, data: Record<string, unknow
     featured: Boolean(data.featured),
     badge: data.badge ? String(data.badge) : null,
     iconUrl: data.iconUrl ? String(data.iconUrl) : null,
-    hasDownload: Boolean(data.downloadFile && typeof data.downloadFile === "object" && typeof (data.downloadFile as { pathname?: unknown }).pathname === "string"),
+    hasDownload: Boolean(data.downloadFile && typeof data.downloadFile === "object" && typeof (data.downloadFile as { pathname?: unknown }).pathname === "string") || (Array.isArray(data.options) && data.options.some((item) => item && typeof item === "object" && "downloadFile" in item && Boolean((item as { downloadFile?: unknown }).downloadFile))),
     previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets.map(String).slice(0, 6) : [],
     hasOptions: Array.isArray(data.options) && data.options.length > 0,
     options: Array.isArray(data.options) ? data.options.flatMap((item) => {
       if (!item || typeof item !== "object") return [];
-      const option = item as { id?: unknown; title?: unknown; priceMinor?: unknown; previewUrl?: unknown; purchaseUrl?: unknown; displayOrder?: unknown; active?: unknown };
+      const option = item as { id?: unknown; title?: unknown; priceMinor?: unknown; previewUrl?: unknown; purchaseUrl?: unknown; downloadFile?: unknown; displayOrder?: unknown; active?: unknown };
       if (option.active !== true || typeof option.id !== "string" || typeof option.title !== "string" || typeof option.priceMinor !== "number" || !Number.isSafeInteger(option.priceMinor) || option.priceMinor < 100) return [];
       const candidateUrl = typeof option.previewUrl === "string" ? option.previewUrl : option.purchaseUrl;
       const previewUrl = typeof candidateUrl === "string" && /^https?:\/\//i.test(candidateUrl) ? candidateUrl : null;
-      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), previewUrl, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
+      const hasDownload = Boolean(option.downloadFile && typeof option.downloadFile === "object" && typeof (option.downloadFile as { pathname?: unknown }).pathname === "string");
+      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), previewUrl, hasDownload, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
     }).sort((a, b) => a.displayOrder - b.displayOrder || a.title.localeCompare(b.title)).slice(0, 100) : [],
     fulfillment: data.fulfillment,
   };

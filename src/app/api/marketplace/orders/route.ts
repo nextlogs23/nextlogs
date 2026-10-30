@@ -50,7 +50,10 @@ export async function POST(request: NextRequest) {
       const balanceMinor = walletSnapshot.data()?.balanceMinor ?? 0;
       if (!Number.isSafeInteger(balanceMinor) || balanceMinor < priceMinor) throw Object.assign(new Error("Insufficient wallet balance"), { status: 409 });
       const nextBalance = balanceMinor - priceMinor;
-      const downloadFile = product.downloadFile && typeof product.downloadFile === "object" && typeof product.downloadFile.pathname === "string" && product.downloadFile.pathname.startsWith("marketplace/product-files/") ? product.downloadFile : null;
+      const optionDownload = selectedOption?.downloadFile;
+      const selectedDownload = optionDownload && typeof optionDownload === "object" && typeof optionDownload.pathname === "string" && optionDownload.pathname.startsWith("marketplace/product-files/") ? optionDownload : null;
+      const defaultDownload = product.downloadFile && typeof product.downloadFile === "object" && typeof product.downloadFile.pathname === "string" && product.downloadFile.pathname.startsWith("marketplace/product-files/") ? product.downloadFile : null;
+      const downloadFile = selectedDownload || defaultDownload;
       const instant = Boolean(downloadFile) || (product.fulfillment === "instant" && typeof product.deliveryUrl === "string" && /^https:\/\//i.test(product.deliveryUrl));
       const status = instant ? "successful" : "processing";
       const optionTitle = selectedOption?.title || null;

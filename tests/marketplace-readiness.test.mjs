@@ -38,8 +38,19 @@ test("private product files require a completed owner order", () => {
   assert.match(download, /requireUser/);
   assert.match(download, /order\?\.userId !== user\.uid/);
   assert.match(download, /\["successful", "completed"\]/);
-  assert.match(download, /get\(file\.pathname, \{ access: "private" \}\)/);
+  assert.match(download, /get\(file\.pathname, \{ access: "private", storeId: blobStoreId \}\)/);
+  assert.match(order, /const downloadFile = selectedDownload \|\| defaultDownload/);
   assert.match(order, /downloadUrl/);
+});
+
+test("each product option can own a protected downloadable file", () => {
+  const admin = read("src/app/api/admin/marketplace/route.ts");
+  const manager = read("src/components/admin/marketplace-manager.tsx");
+  const order = read("src/app/api/marketplace/orders/route.ts");
+  assert.match(admin, /downloadFile: downloadFileSchema\.nullable\(\)\.default\(null\)/);
+  assert.match(manager, /OptionDownloadField/);
+  assert.match(manager, /downloadFile: option\.downloadFile/);
+  assert.match(order, /selectedOption\?\.downloadFile/);
 });
 
 test("every marketplace product has a customer details route", () => {

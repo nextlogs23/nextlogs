@@ -12,7 +12,7 @@ const downloadFileSchema = z.object({
 });
 const productOptionSchema = z.object({
   id: z.string().uuid(), title: z.string().trim().min(2).max(90), priceMinor: z.number().int().min(100),
-  previewUrl: previewUrlSchema.nullable().default(null), displayOrder: z.number().int().min(0).max(10000), active: z.boolean().default(true),
+  previewUrl: previewUrlSchema.nullable().default(null), downloadFile: downloadFileSchema.nullable().default(null), displayOrder: z.number().int().min(0).max(10000), active: z.boolean().default(true),
 });
 const productSchema = z.object({
   title: z.string().trim().min(3).max(90), description: z.string().trim().min(12).max(500),
@@ -24,7 +24,9 @@ const productSchema = z.object({
   options: z.array(productOptionSchema).max(100).default([]),
   fulfillment: z.enum(marketplaceFulfillment), deliveryUrl: z.string().url().startsWith("https://").optional(), active: z.boolean().default(false),
 }).superRefine((value, context) => {
-  if (value.fulfillment === "instant" && !value.deliveryUrl && !value.downloadFile) context.addIssue({ code: "custom", message: "Instant products require a downloadable file or secure delivery URL", path: ["downloadFile"] });
+  const activeOptions = value.options.filter((option) => option.active);
+  const optionsHaveDelivery = activeOptions.length > 0 && activeOptions.every((option) => Boolean(option.downloadFile));
+  if (value.fulfillment === "instant" && !value.deliveryUrl && !value.downloadFile && !optionsHaveDelivery) context.addIssue({ code: "custom", message: "Every active option needs a downloadable file, or the product needs a default file or secure delivery URL", path: ["options"] });
   const ids = new Set<string>(); value.options.forEach((option, index) => { if (ids.has(option.id)) context.addIssue({ code: "custom", message: "Every product option must have a unique ID", path: ["options", index, "id"] }); ids.add(option.id); });
 });
 const actionSchema = z.discriminatedUnion("action", [
