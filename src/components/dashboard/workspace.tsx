@@ -54,7 +54,7 @@ const networks = [
   { id: "glo", name: "Glo", logo: "/logos/glo.png" }, { id: "9mobile", name: "9mobile", logo: "/logos/9mobile.png" },
 ] as const;
 const countries = [
-  { code: "NG", name: "Nigeria", dial: "+234", flag: "🇳🇬" }, { code: "US", name: "United States", dial: "+1", flag: "🇺🇸" },
+  { code: "US", name: "United States", dial: "+1", flag: "🇺🇸" },
   { code: "GB", name: "United Kingdom", dial: "+44", flag: "🇬🇧" }, { code: "CA", name: "Canada", dial: "+1", flag: "🇨🇦" },
   { code: "DE", name: "Germany", dial: "+49", flag: "🇩🇪" }, { code: "FR", name: "France", dial: "+33", flag: "🇫🇷" },
 ];
@@ -97,7 +97,7 @@ function ConfirmModal({ title, children, busy, onClose, onConfirm }: { title: st
 }
 
 function LegacySmsWorkspace() {
-  const [search, setSearch] = useState(""); const [country, setCountry] = useState("NG"); const [services, setServices] = useState<SmsService[]>([]); const [selected, setSelected] = useState<SmsService | null>(null); const [loading, setLoading] = useState(false); const [buying, setBuying] = useState(false); const [order, setOrder] = useState<{ reference: string; number: string; status: string; expiresAt: string } | null>(null); const [messages, setMessages] = useState<Array<{ receivedAt: string; text: string }>>([]);
+  const [search, setSearch] = useState(""); const [country, setCountry] = useState("US"); const [services, setServices] = useState<SmsService[]>([]); const [selected, setSelected] = useState<SmsService | null>(null); const [loading, setLoading] = useState(false); const [buying, setBuying] = useState(false); const [order, setOrder] = useState<{ reference: string; number: string; status: string; expiresAt: string } | null>(null); const [messages, setMessages] = useState<Array<{ receivedAt: string; text: string }>>([]);
   const visibleCountries = countries.filter(item => item.name.toLowerCase().includes(search.toLowerCase()) || item.code.toLowerCase().includes(search.toLowerCase()));
   async function loadServices(code: string) { setCountry(code); setSelected(null); setLoading(true); try { const data = await api<{ services: SmsService[] }>(`/api/sms/services?country=${code}`); setServices(data.services); if (!data.services.length) toast.error("No supported services are currently available for this country."); } catch (error) { setServices([]); toast.error(error instanceof Error ? error.message : "Unable to load live services"); } finally { setLoading(false); } }
   async function purchase() { if (!selected) return; const price = selected.priceMinor ?? selected.costMinor; if (!price) { toast.error("Retail pricing is not configured for this service."); return; } setBuying(true); try { const result = await api<{ reference: string; number: string; status: string; expiresAt: string }>("/api/sms/orders", { method: "POST", body: JSON.stringify({ country, service: selected.id, priceMinor: price }) }); setOrder(result); toast.success("Number assigned successfully."); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to purchase number"); } finally { setBuying(false); } }
@@ -112,7 +112,7 @@ type InboundMessage = { id?: string; from?: string; text: string; receivedAt: st
 
 function TelnyxWorkspace() {
   const [countrySearch, setCountrySearch] = useState("");
-  const [country, setCountry] = useState("NG");
+  const [country, setCountry] = useState("US");
   const [offers, setOffers] = useState<TelnyxNumberOffer[]>([]);
   const [selected, setSelected] = useState<TelnyxNumberOffer | null>(null);
   const [orders, setOrders] = useState<TelnyxOrder[]>([]);
