@@ -1,2 +1,2 @@
-import { MarketplaceAdmin } from "@/components/admin/marketplace-admin";
-export default function Page(){return <MarketplaceAdmin/>}
+import { MarketplaceManager } from "@/components/admin/marketplace-manager";
+export default function Page(){return <MarketplaceManager/>}
