@@ -9,7 +9,7 @@ import { enforceRateLimit } from "@/lib/server/rate-limit";
 const purchaseSchema = z.object({ productId: z.string().min(1).max(120), optionId: z.string().uuid().optional(), idempotencyKey: z.string().min(16).max(100) });
 const iso = (value: unknown) => value instanceof Timestamp ? value.toDate().toISOString() : value && typeof value === "object" && "toDate" in value ? (value as { toDate(): Date }).toDate().toISOString() : null;
 const millis = (value: unknown) => value instanceof Timestamp ? value.toMillis() : value && typeof value === "object" && "toMillis" in value ? (value as { toMillis(): number }).toMillis() : 0;
-function publicOrder(id: string, data: Record<string, unknown>) { return { id, reference: data.reference, productId: data.productId, optionId: data.optionId ?? null, optionTitle: data.optionTitle ?? null, title: data.title, category: data.category, kind: data.kind, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, deliveryUrl: data.status === "successful" || data.status === "completed" ? data.deliveryUrl || null : null, createdAt: iso(data.createdAt) }; }
+function publicOrder(id: string, data: Record<string, unknown>) { const fulfilled = data.status === "successful" || data.status === "completed"; return { id, reference: data.reference, productId: data.productId, optionId: data.optionId ?? null, optionTitle: data.optionTitle ?? null, title: data.title, category: data.category, kind: data.kind, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, deliveryUrl: fulfilled ? data.deliveryUrl || null : null, downloadUrl: fulfilled && data.downloadFile ? `/api/marketplace/orders/${encodeURIComponent(id)}/download` : null, createdAt: iso(data.createdAt) }; }
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,23 +45,23 @@ export async function POST(request: NextRequest) {
       const selectedOption = input.optionId ? activeOptions.find((option) => option.id === input.optionId) : null;
       if (input.optionId && !selectedOption) throw Object.assign(new Error("This product option is disabled or unavailable"), { status: 409 });
       if (!input.optionId && options.length) throw Object.assign(new Error("Select an available product option before checkout"), { status: 400 });
-      if (selectedOption?.purchaseUrl) throw Object.assign(new Error("External options must be opened using their purchase link"), { status: 409 });
       const priceMinor = selectedOption?.priceMinor ?? product.priceMinor;
       if (!Number.isSafeInteger(priceMinor) || priceMinor <= 0) throw Object.assign(new Error("This product price is invalid"), { status: 409 });
       const balanceMinor = walletSnapshot.data()?.balanceMinor ?? 0;
       if (!Number.isSafeInteger(balanceMinor) || balanceMinor < priceMinor) throw Object.assign(new Error("Insufficient wallet balance"), { status: 409 });
       const nextBalance = balanceMinor - priceMinor;
-      const instant = product.fulfillment === "instant" && typeof product.deliveryUrl === "string" && /^https:\/\//i.test(product.deliveryUrl);
+      const downloadFile = product.downloadFile && typeof product.downloadFile === "object" && typeof product.downloadFile.pathname === "string" && product.downloadFile.pathname.startsWith("marketplace/product-files/") ? product.downloadFile : null;
+      const instant = Boolean(downloadFile) || (product.fulfillment === "instant" && typeof product.deliveryUrl === "string" && /^https:\/\//i.test(product.deliveryUrl));
       const status = instant ? "successful" : "processing";
       const optionTitle = selectedOption?.title || null;
       const orderTitle = optionTitle ? `${product.title} — ${optionTitle}` : product.title;
-      const order = { reference, userId: user.uid, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, providerCostMinor: product.providerCostMinor ?? null, fulfillment: product.fulfillment, deliveryUrl: instant ? product.deliveryUrl : null, status, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+      const order = { reference, userId: user.uid, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, providerCostMinor: product.providerCostMinor ?? null, fulfillment: product.fulfillment, deliveryUrl: instant && !downloadFile ? product.deliveryUrl : null, downloadFile, status, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
       transaction.update(productRef, { stock: product.stock - 1, updatedAt: FieldValue.serverTimestamp() });
       transaction.set(walletRef, { userId: user.uid, balanceMinor: nextBalance, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       transaction.create(ledgerRef, { userId: user.uid, reference, amountMinor: -priceMinor, kind: "purchase", description: `Marketplace purchase: ${orderTitle}`, balanceAfterMinor: nextBalance, status: "successful", createdAt: FieldValue.serverTimestamp() });
       transaction.create(orderRef, order);
       transaction.create(transactionRef, { reference, userId: user.uid, serviceType: "marketplace", amountMinor: priceMinor, retailPriceMinor: priceMinor, providerCostMinor: product.providerCostMinor ?? null, status, metadata: { productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: product.title, category: product.category }, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-      return { reference, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, status, fulfillment: product.fulfillment, deliveryUrl: instant ? product.deliveryUrl : null, idempotent: false };
+      return { reference, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, status, fulfillment: product.fulfillment, deliveryUrl: instant && !downloadFile ? product.deliveryUrl : null, downloadUrl: downloadFile ? `/api/marketplace/orders/${encodeURIComponent(reference)}/download` : null, idempotent: false };
     });
     return Response.json(result);
   } catch (error) {

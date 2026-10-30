@@ -11,12 +11,12 @@ test("marketplace customer and admin routes require authenticated principals", (
   assert.match(read("src/app/api/admin/marketplace/route.ts"), /requireAdmin/);
 });
 
-test("product options are validated, ordered, and limited to active public records", () => {
+test("product options use preview links, are ordered, and expose only active public records", () => {
   const admin = read("src/app/api/admin/marketplace/route.ts");
   const helper = read("src/lib/server/marketplace.ts");
   assert.match(admin, /productOptionSchema/);
   assert.match(admin, /Every product option must have a unique ID/);
-  assert.match(admin, /Purchase links must use HTTP or HTTPS/);
+  assert.match(admin, /Preview links must use HTTP or HTTPS/);
   assert.match(helper, /option\.active !== true/);
   assert.match(helper, /sort\(\(a, b\) => a\.displayOrder - b\.displayOrder/);
 });
@@ -25,8 +25,21 @@ test("internal option checkout validates option state and server-side price", ()
   const route = read("src/app/api/marketplace/orders/route.ts");
   assert.match(route, /This product option is disabled or unavailable/);
   assert.match(route, /const priceMinor = selectedOption\?\.priceMinor \?\? product\.priceMinor/);
-  assert.match(route, /External options must be opened using their purchase link/);
+  assert.doesNotMatch(route, /External options must be opened using their purchase link/);
   assert.match(route, /optionId: selectedOption\?\.id/);
+});
+
+test("private product files require a completed owner order", () => {
+  const upload = read("src/app/api/admin/marketplace/file/route.ts");
+  const download = read("src/app/api/marketplace/orders/[reference]/download/route.ts");
+  const order = read("src/app/api/marketplace/orders/route.ts");
+  assert.match(upload, /requireAdmin/);
+  assert.match(upload, /access: "private"/);
+  assert.match(download, /requireUser/);
+  assert.match(download, /order\?\.userId !== user\.uid/);
+  assert.match(download, /\["successful", "completed"\]/);
+  assert.match(download, /get\(file\.pathname, \{ access: "private" \}\)/);
+  assert.match(order, /downloadUrl/);
 });
 
 test("every marketplace product has a customer details route", () => {

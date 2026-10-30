@@ -5,10 +5,14 @@ import { requireAdmin, routeError } from "@/lib/server/auth";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { assertPermittedMarketplaceProduct, marketplaceCategories, marketplaceFulfillment, marketplaceKinds } from "@/lib/server/marketplace";
 
-const purchaseUrlSchema = z.string().url().max(2000).refine((value) => /^https?:\/\//i.test(value), "Purchase links must use HTTP or HTTPS");
+const previewUrlSchema = z.string().url().max(2000).refine((value) => /^https?:\/\//i.test(value), "Preview links must use HTTP or HTTPS");
+const downloadFileSchema = z.object({
+  pathname: z.string().startsWith("marketplace/product-files/").max(500), fileName: z.string().trim().min(1).max(120),
+  contentType: z.string().trim().min(3).max(150), size: z.number().int().min(1).max(10 * 1024 * 1024),
+});
 const productOptionSchema = z.object({
   id: z.string().uuid(), title: z.string().trim().min(2).max(90), priceMinor: z.number().int().min(100),
-  purchaseUrl: purchaseUrlSchema.nullable().default(null), displayOrder: z.number().int().min(0).max(10000), active: z.boolean().default(true),
+  previewUrl: previewUrlSchema.nullable().default(null), displayOrder: z.number().int().min(0).max(10000), active: z.boolean().default(true),
 });
 const productSchema = z.object({
   title: z.string().trim().min(3).max(90), description: z.string().trim().min(12).max(500),
@@ -16,11 +20,11 @@ const productSchema = z.object({
   priceMinor: z.number().int().min(100), stock: z.number().int().min(0).max(100000),
   featured: z.boolean().default(false), badge: z.string().trim().max(24).optional(), previewBullets: z.array(z.string().trim().min(2).max(100)).max(6),
   iconUrl: z.string().url().startsWith("https://").max(2000).optional(),
+  downloadFile: downloadFileSchema.nullable().default(null),
   options: z.array(productOptionSchema).max(100).default([]),
   fulfillment: z.enum(marketplaceFulfillment), deliveryUrl: z.string().url().startsWith("https://").optional(), active: z.boolean().default(false),
 }).superRefine((value, context) => {
-  const hasInternalOption = value.options.some((option) => option.active && !option.purchaseUrl);
-  if (value.fulfillment === "instant" && !value.deliveryUrl && (!value.options.length || hasInternalOption)) context.addIssue({ code: "custom", message: "Instant wallet-checkout products require a secure delivery URL", path: ["deliveryUrl"] });
+  if (value.fulfillment === "instant" && !value.deliveryUrl && !value.downloadFile) context.addIssue({ code: "custom", message: "Instant products require a downloadable file or secure delivery URL", path: ["downloadFile"] });
   const ids = new Set<string>(); value.options.forEach((option, index) => { if (ids.has(option.id)) context.addIssue({ code: "custom", message: "Every product option must have a unique ID", path: ["options", index, "id"] }); ids.add(option.id); });
 });
 const actionSchema = z.discriminatedUnion("action", [
@@ -39,7 +43,7 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request); const db = adminDb();
     const [products, orders] = await Promise.all([db.collection("marketplaceProducts").orderBy("createdAt", "desc").limit(100).get(), db.collection("marketplaceOrders").orderBy("createdAt", "desc").limit(100).get()]);
     return Response.json({
-      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, description: data.description, category: data.category, kind: data.kind, priceMinor: data.priceMinor, stock: data.stock, active: data.active, featured: Boolean(data.featured), badge: data.badge ?? null, iconUrl: data.iconUrl ?? null, previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets : [], options: Array.isArray(data.options) ? data.options : [], fulfillment: data.fulfillment, deliveryUrl: data.deliveryUrl ?? null, createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt), archivedAt: iso(data.archivedAt) }; }),
+      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, description: data.description, category: data.category, kind: data.kind, priceMinor: data.priceMinor, stock: data.stock, active: data.active, featured: Boolean(data.featured), badge: data.badge ?? null, iconUrl: data.iconUrl ?? null, downloadFile: data.downloadFile ?? null, previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets : [], options: Array.isArray(data.options) ? data.options.map((option) => ({ ...option, previewUrl: option.previewUrl ?? option.purchaseUrl ?? null })) : [], fulfillment: data.fulfillment, deliveryUrl: data.deliveryUrl ?? null, createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt), archivedAt: iso(data.archivedAt) }; }),
       orders: orders.docs.map((doc) => { const data = doc.data(); return { id: doc.id, reference: data.reference, userId: data.userId, productId: data.productId, title: data.title, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, createdAt: iso(data.createdAt) }; }),
     });
   } catch (error) { return routeError(error); }

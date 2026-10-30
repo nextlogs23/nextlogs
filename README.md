@@ -90,16 +90,23 @@ If a provider request times out after the wallet debit, leave the transaction in
 
 Pricing documents live in `servicePricing` and are read only on the server. For each offer store `providerCostMinor`, `retailPriceMinor`, `enabled`, `provider`, and `updatedAt`. SMS purchase re-fetches provider availability and compares the submitted price with the server price. Apply the same pattern when completing a live VTU adapter.
 
+## Marketplace product downloads
+
+Marketplace files use a **private Vercel Blob store**. Connect a private Blob store to the Vercel project before uploading files. Vercel uses project-scoped OIDC automatically in production; local development requires `BLOB_READ_WRITE_TOKEN` in `.env.local`.
+
+Administrators can upload PDF, ZIP, Office, text, CSV, PNG, JPEG, or WebP files up to 10 MB. Blob pathnames are never included in the public catalogue. After a server-validated wallet purchase, the order stores an immutable file entitlement and exposes an authenticated download route only to that order's owner. Option preview links open separately and never count as successful purchases.
+
 ## Deploy to Vercel
 
 1. Import this `nevora-connect` directory as the Vercel project root.
 2. Add every required environment variable for Preview and Production.
 3. Set `NEXT_PUBLIC_APP_URL` to the deployed HTTPS origin.
 4. Deploy Firestore rules/indexes.
-5. Register the production Paystack and Telnyx webhooks.
-6. Deploy the updated Firestore rules and indexes.
-7. Test Telnyx search and signed webhook delivery with `TELNYX_PURCHASES_ENABLED=false`.
-8. Run payment tests end-to-end, including duplicate-webhook, timeout and refund reconciliation tests.
-9. Only then enable live purchases.
+5. Create and connect a private Vercel Blob store for marketplace downloads.
+6. Register the production Paystack and Telnyx webhooks.
+7. Deploy the updated Firestore rules and indexes.
+8. Test Telnyx search and signed webhook delivery with `TELNYX_PURCHASES_ENABLED=false`.
+9. Run payment tests end-to-end, including duplicate-webhook, timeout and refund reconciliation tests.
+10. Only then enable live purchases.
 
 All secret variables must remain unprefixed; only Firebase web configuration and the public application URL use `NEXT_PUBLIC_*`.

@@ -28,14 +28,16 @@ export function publicMarketplaceProduct(id: string, data: Record<string, unknow
     featured: Boolean(data.featured),
     badge: data.badge ? String(data.badge) : null,
     iconUrl: data.iconUrl ? String(data.iconUrl) : null,
+    hasDownload: Boolean(data.downloadFile && typeof data.downloadFile === "object" && typeof (data.downloadFile as { pathname?: unknown }).pathname === "string"),
     previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets.map(String).slice(0, 6) : [],
     hasOptions: Array.isArray(data.options) && data.options.length > 0,
     options: Array.isArray(data.options) ? data.options.flatMap((item) => {
       if (!item || typeof item !== "object") return [];
-      const option = item as { id?: unknown; title?: unknown; priceMinor?: unknown; purchaseUrl?: unknown; displayOrder?: unknown; active?: unknown };
+      const option = item as { id?: unknown; title?: unknown; priceMinor?: unknown; previewUrl?: unknown; purchaseUrl?: unknown; displayOrder?: unknown; active?: unknown };
       if (option.active !== true || typeof option.id !== "string" || typeof option.title !== "string" || typeof option.priceMinor !== "number" || !Number.isSafeInteger(option.priceMinor) || option.priceMinor < 100) return [];
-      const purchaseUrl = typeof option.purchaseUrl === "string" && /^https?:\/\//i.test(option.purchaseUrl) ? option.purchaseUrl : null;
-      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), purchaseUrl, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
+      const candidateUrl = typeof option.previewUrl === "string" ? option.previewUrl : option.purchaseUrl;
+      const previewUrl = typeof candidateUrl === "string" && /^https?:\/\//i.test(candidateUrl) ? candidateUrl : null;
+      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), previewUrl, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
     }).sort((a, b) => a.displayOrder - b.displayOrder || a.title.localeCompare(b.title)).slice(0, 100) : [],
     fulfillment: data.fulfillment,
   };
