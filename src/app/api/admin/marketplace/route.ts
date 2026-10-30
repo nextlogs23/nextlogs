@@ -11,6 +11,7 @@ const productSchema = z.object({
   priceMinor: z.number().int().min(100), providerCostMinor: z.number().int().min(0).optional(), stock: z.number().int().min(0).max(100000),
   featured: z.boolean().default(false), badge: z.string().trim().max(24).optional(), previewBullets: z.array(z.string().trim().min(2).max(100)).max(6),
   iconUrl: z.string().url().startsWith("https://").max(2000).optional(),
+  resourceLinks: z.array(z.object({ label: z.string().trim().min(2).max(60), url: z.string().url().startsWith("https://").max(2000) })).max(12).default([]),
   fulfillment: z.enum(marketplaceFulfillment), deliveryUrl: z.string().url().startsWith("https://").optional(), active: z.boolean().default(false),
 }).superRefine((value, context) => { if (value.fulfillment === "instant" && !value.deliveryUrl) context.addIssue({ code: "custom", message: "Instant products require a secure delivery URL", path: ["deliveryUrl"] }); });
 const actionSchema = z.discriminatedUnion("action", [
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request); const db = adminDb();
     const [products, orders] = await Promise.all([db.collection("marketplaceProducts").orderBy("createdAt", "desc").limit(100).get(), db.collection("marketplaceOrders").orderBy("createdAt", "desc").limit(100).get()]);
     return Response.json({
-      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, description: data.description, category: data.category, kind: data.kind, priceMinor: data.priceMinor, providerCostMinor: data.providerCostMinor ?? null, stock: data.stock, active: data.active, featured: Boolean(data.featured), badge: data.badge ?? null, iconUrl: data.iconUrl ?? null, previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets : [], fulfillment: data.fulfillment, deliveryUrl: data.deliveryUrl ?? null, createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt), archivedAt: iso(data.archivedAt) }; }),
+      products: products.docs.map((doc) => { const data = doc.data(); return { id: doc.id, title: data.title, description: data.description, category: data.category, kind: data.kind, priceMinor: data.priceMinor, providerCostMinor: data.providerCostMinor ?? null, stock: data.stock, active: data.active, featured: Boolean(data.featured), badge: data.badge ?? null, iconUrl: data.iconUrl ?? null, previewBullets: Array.isArray(data.previewBullets) ? data.previewBullets : [], resourceLinks: Array.isArray(data.resourceLinks) ? data.resourceLinks : [], fulfillment: data.fulfillment, deliveryUrl: data.deliveryUrl ?? null, createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt), archivedAt: iso(data.archivedAt) }; }),
       orders: orders.docs.map((doc) => { const data = doc.data(); return { id: doc.id, reference: data.reference, userId: data.userId, productId: data.productId, title: data.title, priceMinor: data.priceMinor, status: data.status, fulfillment: data.fulfillment, createdAt: iso(data.createdAt) }; }),
     });
   } catch (error) { return routeError(error); }
@@ -91,5 +92,5 @@ export async function PATCH(request: NextRequest) {
       transaction.update(orderRef, { status: "refunded", refundReason: input.reason, refundedBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.set(platformRef, { status: "refunded", updatedAt: FieldValue.serverTimestamp() }, { merge: true }); transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_order_refunded", targetId: input.reference, reason: input.reason, createdAt: FieldValue.serverTimestamp() });
     });
     return Response.json({ updated: true });
-  } catch (error) { if (error instanceof z.ZodError) return routeError(Object.assign(new Error("Invalid marketplace action"), { status: 400 })); return routeError(error); }
+  } catch (error) { if (error instanceof z.ZodError) return routeError(Object.assign(new Error(error.issues[0]?.message || "Invalid marketplace action"), { status: 400 })); return routeError(error); }
 }

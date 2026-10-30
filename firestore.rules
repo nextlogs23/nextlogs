@@ -36,6 +36,7 @@ service cloud.firestore {
     match /smsPoolRentals/{id} { allow read, write: if false; }
     match /marketplaceProducts/{id} { allow read, write: if false; }
     match /marketplaceOrders/{id} { allow read, write: if false; }
+    match /marketplaceMedia/{id} { allow read, write: if false; }
     match /airtimeOrders/{id} { allow read, write: if false; }
     match /dataOrders/{id} { allow read, write: if false; }
     match /electricityOrders/{id} { allow read, write: if false; }

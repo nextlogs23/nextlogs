@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ArchiveRestore, Boxes, CheckCircle2, Copy, Eye, LoaderCircle, Package, PackagePlus, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Star, Store, Trash2, UploadCloud, X } from "lucide-react";
+import { ArchiveRestore, Boxes, CheckCircle2, Copy, ExternalLink, Eye, Link2, LoaderCircle, Package, PackagePlus, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Star, Store, Trash2, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { ProductGeneratedIcon } from "@/components/marketplace/product-generated-icon";
@@ -9,32 +9,49 @@ import { ProductGeneratedIcon } from "@/components/marketplace/product-generated
 type Product = {
   id: string; title: string; description: string; category: string; kind: string; priceMinor: number; providerCostMinor: number | null;
   stock: number; active: boolean; featured: boolean; badge: string | null; iconUrl: string | null; previewBullets: string[]; fulfillment: string;
-  deliveryUrl: string | null; createdAt?: string | null; updatedAt?: string | null; archivedAt?: string | null;
+  resourceLinks: Array<{ label: string; url: string }>; deliveryUrl: string | null; createdAt?: string | null; updatedAt?: string | null; archivedAt?: string | null;
 };
 type Order = { id: string; reference: string; userId: string; productId: string; title: string; priceMinor: number; status: string; fulfillment: string; createdAt?: string | null };
-type ProductForm = { title: string; description: string; category: string; kind: string; price: string; cost: string; stock: string; fulfillment: string; deliveryUrl: string; bullets: string; badge: string; iconUrl: string; active: boolean; featured: boolean };
+type ProductForm = { title: string; description: string; category: string; kind: string; price: string; cost: string; stock: string; fulfillment: string; deliveryUrl: string; bullets: string; resourceLinksText: string; badge: string; iconUrl: string; active: boolean; featured: boolean };
 type ProductStatus = "all" | "live" | "hidden" | "archived";
 
-const emptyForm: ProductForm = { title: "", description: "", category: "social_assets", kind: "download", price: "", cost: "", stock: "", fulfillment: "instant", deliveryUrl: "", bullets: "", badge: "", iconUrl: "", active: false, featured: false };
+const emptyForm: ProductForm = { title: "", description: "", category: "social_assets", kind: "download", price: "", cost: "", stock: "", fulfillment: "instant", deliveryUrl: "", bullets: "", resourceLinksText: "", badge: "", iconUrl: "", active: false, featured: false };
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
-const productPayload = (form: ProductForm) => ({ title: form.title, description: form.description, category: form.category, kind: form.kind, priceMinor: Math.round(Number(form.price) * 100), providerCostMinor: form.cost ? Math.round(Number(form.cost) * 100) : undefined, stock: Number(form.stock), fulfillment: form.fulfillment, deliveryUrl: form.fulfillment === "instant" && form.deliveryUrl ? form.deliveryUrl : undefined, previewBullets: form.bullets.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 6), badge: form.badge || undefined, iconUrl: form.iconUrl || undefined, active: form.active, featured: form.featured });
-const formFromProduct = (product: Product): ProductForm => ({ title: product.title, description: product.description, category: product.category, kind: product.kind, price: String(product.priceMinor / 100), cost: product.providerCostMinor == null ? "" : String(product.providerCostMinor / 100), stock: String(product.stock), fulfillment: product.fulfillment, deliveryUrl: product.deliveryUrl || "", bullets: product.previewBullets.join(", "), badge: product.badge || "", iconUrl: product.iconUrl || "", active: product.active, featured: product.featured });
+const parseResourceLinks = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 12).map((line, index) => { const divider = line.indexOf("|"); return divider >= 0 ? { label: line.slice(0, divider).trim(), url: line.slice(divider + 1).trim() } : { label: `Link ${index + 1}`, url: line }; });
+const productPayload = (form: ProductForm) => ({ title: form.title, description: form.description, category: form.category, kind: form.kind, priceMinor: Math.round(Number(form.price) * 100), providerCostMinor: form.cost ? Math.round(Number(form.cost) * 100) : undefined, stock: Number(form.stock), fulfillment: form.fulfillment, deliveryUrl: form.fulfillment === "instant" && form.deliveryUrl ? form.deliveryUrl : undefined, previewBullets: form.bullets.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 6), resourceLinks: parseResourceLinks(form.resourceLinksText), badge: form.badge || undefined, iconUrl: form.iconUrl || undefined, active: form.active, featured: form.featured });
+const formFromProduct = (product: Product): ProductForm => ({ title: product.title, description: product.description, category: product.category, kind: product.kind, price: String(product.priceMinor / 100), cost: product.providerCostMinor == null ? "" : String(product.providerCostMinor / 100), stock: String(product.stock), fulfillment: product.fulfillment, deliveryUrl: product.deliveryUrl || "", bullets: product.previewBullets.join(", "), resourceLinksText: (product.resourceLinks || []).map((link) => `${link.label} | ${link.url}`).join("\n"), badge: product.badge || "", iconUrl: product.iconUrl || "", active: product.active, featured: product.featured });
+
+async function prepareProductIcon(file: File) {
+  const source = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => { const element = new window.Image(); element.onload = () => resolve(element); element.onerror = () => reject(new Error("The selected image could not be read")); element.src = source; });
+    const scale = Math.min(1, 512 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale)); canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d"); if (!context) throw new Error("Image processing is unavailable in this browser");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.86));
+    if (!blob) throw new Error("The selected image could not be prepared");
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "product-icon"}.webp`, { type: "image/webp" });
+  } finally { URL.revokeObjectURL(source); }
+}
 
 function ProductIconField({ form, update }: { form: ProductForm; update: (key: keyof ProductForm, value: string | boolean) => void }) {
   const [uploading, setUploading] = useState(false);
   async function upload(file?: File) {
     if (!file) return;
-    if (file.size > 1024 * 1024) { toast.error("Product icons must be smaller than 1 MB."); return; }
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { toast.error("Choose a PNG, JPEG, or WebP image."); return; }
     setUploading(true);
     try {
-      const data = new FormData(); data.append("icon", file);
+      const prepared = await prepareProductIcon(file);
+      if (prepared.size > 700 * 1024) throw new Error("The optimized icon is still larger than 700 KB. Choose a simpler image.");
+      const data = new FormData(); data.append("icon", prepared);
       const result = await api<{ url: string }>("/api/admin/marketplace/icon", { method: "POST", body: data });
       update("iconUrl", result.url); toast.success("Product icon uploaded.");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Icon upload failed"); }
     finally { setUploading(false); }
   }
-  return <div className="admin-market-icon-field"><div className="admin-market-icon-preview"><ProductGeneratedIcon id={`draft:${form.title}`} title={form.title || "New product"} category={form.category} kind={form.kind} iconUrl={form.iconUrl || null} /></div><div><span>Product icon</span><b>{form.iconUrl ? "Custom icon uploaded" : "Automatically generated"}</b><small>Upload a square PNG, JPEG, or WebP image. Maximum size: 1 MB.</small><div><label className={uploading ? "is-loading" : ""}>{uploading ? <LoaderCircle className="animate-spin" size={14} /> : <UploadCloud size={14} />}{uploading ? "Uploading..." : form.iconUrl ? "Replace icon" : "Upload icon"}<input disabled={uploading} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>{form.iconUrl && <button type="button" onClick={() => update("iconUrl", "")}><Trash2 size={13} /> Use generated icon</button>}</div></div></div>;
+  return <div className="admin-market-icon-field"><div className="admin-market-icon-preview"><ProductGeneratedIcon id={`draft:${form.title}`} title={form.title || "New product"} category={form.category} kind={form.kind} iconUrl={form.iconUrl || null} /></div><div><span>Product icon</span><b>{form.iconUrl ? "Custom icon uploaded" : "Automatically generated"}</b><small>PNG, JPEG, or WebP images are securely optimized before upload.</small><div><label className={uploading ? "is-loading" : ""}>{uploading ? <LoaderCircle className="animate-spin" size={14} /> : <UploadCloud size={14} />}{uploading ? "Uploading..." : form.iconUrl ? "Replace icon" : "Upload icon"}<input disabled={uploading} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>{form.iconUrl && <button type="button" onClick={() => update("iconUrl", "")}><Trash2 size={13} /> Use generated icon</button>}</div></div></div>;
 }
 
 function ProductFields({ form, update }: { form: ProductForm; update: (key: keyof ProductForm, value: string | boolean) => void }) {
@@ -52,6 +69,7 @@ function ProductFields({ form, update }: { form: ProductForm; update: (key: keyo
     </div>
     <label className="admin-market-wide">Description<textarea required value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Explain exactly what the customer receives." /></label>
     <label className="admin-market-wide">Preview points<input value={form.bullets} onChange={(event) => update("bullets", event.target.value)} placeholder="Editable files, Mobile ready, Commercial licence" /></label>
+    <label className="admin-market-wide admin-market-links-field">Product links <span>Visible to customers in the product preview. Add one per line as: Label | https://example.com</span><textarea value={form.resourceLinksText} onChange={(event) => update("resourceLinksText", event.target.value)} placeholder={"Official website | https://example.com\nView sample | https://example.com/sample\nDocumentation | https://example.com/docs"} /></label>
     {form.fulfillment === "instant" && <label className="admin-market-wide">Secure HTTPS delivery URL<input required type="url" value={form.deliveryUrl} onChange={(event) => update("deliveryUrl", event.target.value)} placeholder="https://..." /></label>}
     <div className="admin-market-switches"><label><input type="checkbox" checked={form.featured} onChange={(event) => update("featured", event.target.checked)} /><span><b>Featured product</b><small>Highlight this item in the catalogue</small></span></label><label><input type="checkbox" checked={form.active} onChange={(event) => update("active", event.target.checked)} /><span><b>Publish product</b><small>Make it visible to customers immediately</small></span></label></div>
   </>;
@@ -91,7 +109,14 @@ export function MarketplaceManager() {
     </section>
     <section className="admin3-card admin3-table-card"><div className="admin3-table-toolbar"><div><span>Orders</span><h2>Marketplace purchases</h2></div></div><div className="admin3-table-scroll"><table><thead><tr><th>Product / reference</th><th>User</th><th>Amount</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>{orders.map((order) => <tr key={order.reference}><td><b>{order.title}</b><small>{order.reference}</small></td><td><small>{order.userId}</small></td><td><b>{money(order.priceMinor)}</b></td><td>{order.status}</td><td><small>{order.createdAt ? new Date(order.createdAt).toLocaleString() : "—"}</small></td><td><div className="admin-order-actions">{order.status === "processing" && <button onClick={() => fulfill(order)}><CheckCircle2 size={13} /> Fulfill</button>}{["processing", "successful", "completed"].includes(order.status) && <button onClick={() => refund(order)}><RotateCcw size={13} /> Refund</button>}</div></td></tr>)}</tbody></table></div>{!loading && !orders.length && <div className="admin3-empty"><span><Store size={22} /></span><h3>No marketplace orders</h3><p>Wallet-backed purchases will appear here.</p></div>}</section>
     {editTarget && <div className="modal-layer admin-market-modal-layer"><button className="modal-backdrop" onClick={() => setEditTarget(null)} aria-label="Close edit product" /><form onSubmit={saveEdit} className="admin-market-modal"><div className="admin-market-modal-head"><div><span>Edit catalogue item</span><h2>{editTarget.title}</h2><p>Changes are validated and recorded in the admin audit log.</p></div><button type="button" onClick={() => setEditTarget(null)} aria-label="Close"><X size={18} /></button></div><div className="admin-market-modal-body"><ProductFields form={editForm} update={updateEdit} /></div><div className="admin-market-modal-footer"><button type="button" className="admin3-button secondary" onClick={() => setEditTarget(null)}>Cancel</button><button disabled={busyId === editTarget.id} className="admin3-button primary">{busyId === editTarget.id ? <LoaderCircle className="animate-spin" size={15} /> : <CheckCircle2 size={15} />} Save changes</button></div></form></div>}
-    {previewTarget && <div className="modal-layer admin-market-modal-layer"><button className="modal-backdrop" onClick={() => setPreviewTarget(null)} aria-label="Close preview" /><article className="admin-market-preview"><button className="admin-market-preview-close" onClick={() => setPreviewTarget(null)} aria-label="Close"><X size={18} /></button><div className="admin-market-preview-art"><span><ProductGeneratedIcon id={previewTarget.id} title={previewTarget.title} category={previewTarget.category} kind={previewTarget.kind} iconUrl={previewTarget.iconUrl} /></span>{previewTarget.featured && <b><Star size={12} fill="currentColor" /> Featured</b>}</div><small>{previewTarget.category.replaceAll("_", " ")} · {previewTarget.kind}</small><h2>{previewTarget.title}</h2><p>{previewTarget.description}</p><div className="admin-market-preview-list">{previewTarget.previewBullets.length ? previewTarget.previewBullets.map((bullet) => <span key={bullet}><CheckCircle2 size={13} /> {bullet}</span>) : <span><CheckCircle2 size={13} /> Secure marketplace delivery</span>}</div><footer><div><small>Retail price</small><strong>{money(previewTarget.priceMinor)}</strong></div><span>{previewTarget.stock} in stock</span></footer></article></div>}
+    {previewTarget && <div className="modal-layer admin-market-modal-layer"><button className="modal-backdrop" onClick={() => setPreviewTarget(null)} aria-label="Close preview" /><article className="admin-market-preview">
+      <button className="admin-market-preview-close" onClick={() => setPreviewTarget(null)} aria-label="Close"><X size={18} /></button>
+      <div className="admin-market-preview-art"><span><ProductGeneratedIcon id={previewTarget.id} title={previewTarget.title} category={previewTarget.category} kind={previewTarget.kind} iconUrl={previewTarget.iconUrl} /></span>{previewTarget.featured && <b><Star size={12} fill="currentColor" /> Featured</b>}</div>
+      <small>{previewTarget.category.replaceAll("_", " ")} · {previewTarget.kind}</small><h2>{previewTarget.title}</h2><p>{previewTarget.description}</p>
+      <div className="admin-market-preview-list">{previewTarget.previewBullets.length ? previewTarget.previewBullets.map((bullet) => <span key={bullet}><CheckCircle2 size={13} /> {bullet}</span>) : <span><CheckCircle2 size={13} /> Secure marketplace delivery</span>}</div>
+      {previewTarget.resourceLinks?.length ? <div className="admin-market-preview-links"><b><Link2 size={12} /> Customer-visible links</b>{previewTarget.resourceLinks.map((link) => <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}<ExternalLink size={12} /></a>)}</div> : null}
+      <footer><div><small>Retail price</small><strong>{money(previewTarget.priceMinor)}</strong></div><span>{previewTarget.stock} in stock</span></footer>
+    </article></div>}
     {deleteTarget && <div className="modal-layer admin-market-modal-layer"><button className="modal-backdrop" onClick={() => setDeleteTarget(null)} aria-label="Cancel product removal" /><form onSubmit={archiveProduct} className="admin-market-delete"><span><Trash2 size={22} /></span><h2>Remove this product?</h2><p><b>{deleteTarget.title}</b> will disappear from the customer marketplace. Existing orders and audit history will remain available.</p><label>Reason for removal<textarea required minLength={8} maxLength={300} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} placeholder="Explain why this product is being removed..." /></label><div><button type="button" className="admin3-button secondary" onClick={() => setDeleteTarget(null)}>Keep product</button><button disabled={busyId === deleteTarget.id || deleteReason.trim().length < 8} className="admin3-button danger">{busyId === deleteTarget.id ? <LoaderCircle className="animate-spin" size={15} /> : <Trash2 size={15} />} Delete product</button></div></form></div>}
   </div>;
 }
