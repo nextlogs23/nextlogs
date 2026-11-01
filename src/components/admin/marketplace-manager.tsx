@@ -58,23 +58,6 @@ function ProductIconField({ form, update }: { form: ProductForm; update: Product
   return <div className="admin-market-icon-field"><div className="admin-market-icon-preview"><ProductGeneratedIcon id={`draft:${form.title}`} title={form.title || "New product"} category={form.category} kind={form.kind} iconUrl={form.iconUrl || null} /></div><div><span>Product icon</span><b>{form.iconUrl ? "Custom icon uploaded" : "Automatically generated"}</b><small>PNG, JPEG, or WebP images are securely optimized before upload.</small><div><label className={uploading ? "is-loading" : ""}>{uploading ? <LoaderCircle className="animate-spin" size={14} /> : <UploadCloud size={14} />}{uploading ? "Uploading..." : form.iconUrl ? "Replace icon" : "Upload icon"}<input disabled={uploading} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>{form.iconUrl && <button type="button" onClick={() => update("iconUrl", "")}><Trash2 size={13} /> Use generated icon</button>}</div></div></div>;
 }
 
-function ProductDownloadField({ form, update }: { form: ProductForm; update: ProductFormUpdater }) {
-  const [uploading, setUploading] = useState(false);
-  async function upload(file?: File) {
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error("Product files must be 10 MB or smaller."); return; }
-    setUploading(true);
-    try {
-      const data = new FormData(); data.append("file", file);
-      const result = await api<{ file: ProductDownload }>("/api/admin/marketplace/file", { method: "POST", body: data });
-      update("downloadFile", result.file); toast.success("Private product file uploaded to Vercel Blob.");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Product file upload failed"); }
-    finally { setUploading(false); }
-  }
-  const size = form.downloadFile ? `${(form.downloadFile.size / 1024 / 1024).toFixed(form.downloadFile.size >= 1024 * 1024 ? 1 : 2)} MB` : "Up to 10 MB";
-  return <section className={`admin-product-download ${form.downloadFile ? "has-file" : ""}`}><div className="admin-product-download-icon"><FileDown size={21} /></div><div className="admin-product-download-copy"><span>Customer download</span><b>{form.downloadFile?.fileName || "Upload the file buyers will receive"}</b><small>{form.downloadFile ? `${size} · Stored privately in Vercel Blob` : "PDF, ZIP, Office document, text, CSV, PNG, JPEG, or WebP."}</small></div><div className="admin-product-download-actions"><label className={uploading ? "is-loading" : ""}>{uploading ? <LoaderCircle className="animate-spin" size={14} /> : <UploadCloud size={14} />}{uploading ? "Uploading..." : form.downloadFile ? "Replace file" : "Upload file"}<input disabled={uploading} type="file" accept=".pdf,.zip,.docx,.xlsx,.pptx,.txt,.csv,.png,.jpg,.jpeg,.webp" onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>{form.downloadFile && <button type="button" onClick={() => update("downloadFile", null)}><Trash2 size={13} /> Remove</button>}</div></section>;
-}
-
 function OptionDownloadField({ option, onChange }: { option: ProductOptionForm; onChange: (file: ProductDownload | null) => void }) {
   const [uploading, setUploading] = useState(false);
   async function upload(file?: File) {
@@ -128,7 +111,6 @@ function ProductFields({ form, update }: { form: ProductForm; update: ProductFor
     <label className="admin-market-wide">Description<textarea required value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Explain exactly what the customer receives." /></label>
     <label className="admin-market-wide">Preview points<input value={form.bullets} onChange={(event) => update("bullets", event.target.value)} placeholder="Editable files, Mobile ready, Commercial licence" /></label>
     <ProductOptionsField options={form.options} onChange={(options) => update("options", options)} />
-    {!form.options.length && <ProductDownloadField form={form} update={update} />}
     {form.fulfillment === "instant" && <label className="admin-market-wide">Alternative secure delivery URL <span>Optional when every active option has a downloadable file. Existing URL-based products remain supported.</span><input required={!form.downloadFile && !optionDownloadsComplete} type="url" value={form.deliveryUrl} onChange={(event) => update("deliveryUrl", event.target.value)} placeholder="https://..." /></label>}
     <div className="admin-market-switches"><label><input type="checkbox" checked={form.featured} onChange={(event) => update("featured", event.target.checked)} /><span><b>Featured product</b><small>Highlight this item in the catalogue</small></span></label><label><input type="checkbox" checked={form.active} onChange={(event) => update("active", event.target.checked)} /><span><b>Publish product</b><small>Make it visible to customers immediately</small></span></label></div>
   </>;
