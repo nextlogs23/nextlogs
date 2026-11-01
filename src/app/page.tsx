@@ -32,7 +32,10 @@ const supportedBrands = [
 ];
 
 function ProductPreview() {
-  return <div className="mk-preview"><Image src="/visuals/nextlogs-hero-devices.png" alt="Two premium smartphones displaying an abstract NextLogs digital-services interface" width={1536} height={1024} priority className="mk-hero-art" /></div>;
+  return <div className="mk-preview">
+    <Image src="/visuals/nextlogs-hero-devices-light.png" alt="Two premium smartphones displaying an abstract NextLogs digital-services interface" width={1536} height={1024} priority className="mk-hero-art mk-hero-art-light" />
+    <Image src="/visuals/nextlogs-hero-devices.png" alt="" aria-hidden="true" width={1536} height={1024} className="mk-hero-art mk-hero-art-dark" />
+  </div>;
 }
 
 export default function Home() {
