@@ -552,3 +552,13 @@ html:not(.dark) .portal-search,html:not(.dark) .portal-icon-button,html:not(.dar
 html:not(.dark) .portal-search input::placeholder,html:not(.dark) .ui-input::placeholder{color:#8799aa;opacity:1}
 html:not(.dark) .dash2-stat p,html:not(.dark) .dash2-service p,html:not(.dark) .premium-table td,html:not(.dark) .workspace-heading>div>p:last-child{color:#5f7488}
 html:not(.dark) .product-generated-icon--custom img{background:#fff;object-fit:contain}
+
+/* Transparent hero artwork: keep the phone inside its column and away from copy. */
+.mk-hero-copy{position:relative;z-index:3}
+.mk-hero-grid{grid-template-columns:minmax(0,.96fr) minmax(460px,1.04fr);gap:48px}
+.mk-preview{position:relative;z-index:1;width:100%;max-width:700px;min-width:0;min-height:520px;justify-self:end;overflow:visible}
+.mk-hero-art-cutout{display:block!important;width:100%;max-width:700px;height:auto;object-fit:contain;filter:drop-shadow(0 30px 58px rgba(0,105,210,.23));animation:hero-device-float 7s ease-in-out infinite}
+html:not(.dark) .mk-hero-art-cutout{display:block!important;filter:drop-shadow(0 28px 50px rgba(25,102,163,.18))}
+@media(max-width:1080px){.mk-hero-grid{grid-template-columns:1fr;gap:16px}.mk-preview{width:min(720px,100%);max-width:100%;min-height:460px;justify-self:center;margin-top:0}.mk-hero-art-cutout{max-width:720px}}
+@media(max-width:760px){.mk-preview{width:100%;min-height:345px;margin-top:10px;overflow:hidden}.mk-hero-art-cutout{width:112%;max-width:none;margin-left:-6%}}
+@media(max-width:480px){.mk-preview{min-height:285px}.mk-hero-art-cutout{width:118%;margin-left:-9%}}
