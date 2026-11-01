@@ -7,12 +7,22 @@ import { MotionReveal } from "@/components/motion-reveal";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const services = [
-  { title: "Digital marketplace", copy: "Preview approved digital products, creative assets, and live number services.", href: "/dashboard/marketplace", icon: Store },
-  { title: "SMS verification", copy: "Provider-supported numbers with real inbound message status.", href: "/dashboard/sms", icon: MessageSquareText },
-  { title: "Airtime recharge", copy: "Fast top-ups across supported Nigerian mobile networks.", href: "/dashboard/airtime", icon: PhoneCall },
-  { title: "Mobile data", copy: "Browse live bundles and complete a simple, secure checkout.", href: "/dashboard/data", icon: Wifi },
-  { title: "Electricity bills", copy: "Validate your meter details before making a payment.", href: "/dashboard/electricity", icon: Bolt },
-  { title: "Wallet funding", copy: "Fund through Paystack and track every credit in your ledger.", href: "/dashboard/wallet", icon: WalletCards },
+  { title: "Digital marketplace", tag: "Marketplace", copy: "Preview approved digital products, creative assets, and live number services.", href: "/dashboard/marketplace", icon: Store },
+  { title: "SMS verification", tag: "Provider-backed", copy: "Provider-supported numbers with real inbound message status.", href: "/dashboard/sms", icon: MessageSquareText },
+  { title: "Airtime recharge", tag: "VTU service", copy: "Fast top-ups across supported Nigerian mobile networks.", href: "/dashboard/airtime", icon: PhoneCall },
+  { title: "Mobile data", tag: "VTU service", copy: "Browse live bundles and complete a simple, secure checkout.", href: "/dashboard/data", icon: Wifi },
+  { title: "Electricity bills", tag: "VTU service", copy: "Validate your meter details before making a payment.", href: "/dashboard/electricity", icon: Bolt },
+  { title: "Wallet funding", tag: "Secure wallet", copy: "Fund through Paystack and track every credit in your ledger.", href: "/dashboard/wallet", icon: WalletCards },
+];
+const assurances = [
+  { title: "Protected wallet", copy: "Verified funding and atomic balance updates", icon: ShieldCheck },
+  { title: "Honest status", copy: "Purchases follow the provider-confirmed outcome", icon: BadgeCheck },
+  { title: "Clear history", copy: "Every wallet and service transaction stays traceable", icon: ReceiptText },
+];
+const benefits = [
+  { title: "One connected workspace", copy: "Access marketplace products, SMS verification, VTU services and wallet tools without jumping between platforms.", icon: Store },
+  { title: "Server-side protection", copy: "Private provider credentials and privileged wallet operations remain behind authenticated server routes.", icon: LockKeyhole },
+  { title: "Payment confidence", copy: "Wallet funding is credited only after Paystack verification, with duplicate-credit protection built in.", icon: CreditCard },
 ];
 const faqs = [
   ["What can I use the wallet for?", "Use your balance for marketplace products, SMS verification, airtime, mobile data and supported electricity bill payments."],
@@ -45,9 +55,13 @@ export default function Home() {
 
     <section id="supported-networks" className="mk-logo-strip"><div className="shell mk-logo-strip-inner"><p>Supported networks &amp; platforms</p><div className="mk-logo-list">{supportedBrands.map(({ name, label }) => <div className="mk-logo-brand" key={name}><span><Image src={`/logos/${name}.png`} alt={`${label} logo`} width={30} height={30} /></span><b>{label}</b></div>)}</div></div></section>
 
-    <section id="services" className="mk-section shell"><div className="mk-section-heading"><div><span className="mk-kicker"><i /> Built for everyday life</span><h2>All your essential digital services</h2><p>Clear steps, secure payments and honest provider status across every transaction.</p></div><Link href="/register" className="mk-secondary">Explore the platform <ArrowRight size={14} /></Link></div><div className="mk-service-grid">{services.map(({ title, copy, href, icon: Icon }, index) => <Link href={href} className={`mk-service ${index === 0 ? "featured" : ""}`} key={title}><span><Icon size={21} /></span><small>0{index + 1}</small><h3>{title}</h3><p>{copy}</p><b>Open service <ArrowRight size={13} /></b></Link>)}</div></section>
+    <section className="shell mk-assurance" aria-label="Platform safeguards">{assurances.map(({ title, copy, icon: Icon }) => <article key={title}><span><Icon size={19} /></span><div><h2>{title}</h2><p>{copy}</p></div></article>)}</section>
 
-    <section id="how" className="mk-soft-section"><div className="shell"><div className="mk-section-heading"><div><span className="mk-kicker"><i /> How it works</span><h2>Simple from start to finish</h2><p>A focused journey designed to keep every action clear.</p></div></div><div className="mk-steps">{[["01","Create your account","Sign up and verify your email securely."],["02","Fund your wallet","Add money through verified Paystack checkout."],["03","Choose a service","Select airtime, data, electricity or SMS."],["04","Track the outcome","See the real provider-confirmed transaction status."]].map(([number,title,copy]) => <article key={number}><span>{number}</span><div><Check size={16} /></div><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
+    <section id="services" className="mk-catalog-section"><div className="shell mk-section"><div className="mk-section-heading"><div><span className="mk-kicker"><i /> Explore Nextlogs</span><h2>Everything you need in one connected platform</h2><p>Choose a service, review the details and follow the real transaction outcome from your account.</p></div><Link href="/register" className="mk-secondary">Create an account <ArrowRight size={14} /></Link></div><div className="mk-service-grid">{services.map(({ title, tag, copy, href, icon: Icon }, index) => <Link href={href} className={`mk-service ${index < 2 ? "featured" : ""}`} key={title}><span><Icon size={21} /></span><small>0{index + 1}</small><em>{tag}</em><h3>{title}</h3><p>{copy}</p><b>Open service <ArrowRight size={13} /></b></Link>)}</div></div></section>
+
+    <section className="mk-benefit-section shell"><div className="mk-benefit-intro"><span className="mk-kicker"><i /> Why Nextlogs</span><h2>A clearer way to manage digital services</h2><p>Designed around secure payments, real provider results and a single account history.</p><Link href="/register" className="mk-primary">Start with Nextlogs <ArrowRight size={14} /></Link></div><div className="mk-benefit-grid">{benefits.map(({ title, copy, icon: Icon }, index) => <article key={title}><span><Icon size={20} /></span><small>0{index + 1}</small><h3>{title}</h3><p>{copy}</p></article>)}</div></section>
+
+    <section id="how" className="mk-soft-section"><div className="shell mk-process-layout"><div className="mk-process-intro"><span className="mk-kicker"><i /> How it works</span><h2>From account creation to confirmed delivery</h2><p>A guided four-step flow keeps funding, purchasing and transaction outcomes easy to understand.</p><Link href="/register" className="mk-secondary">Get started <ArrowRight size={14} /></Link></div><div className="mk-steps">{[["01","Create your account","Sign up and verify your email securely."],["02","Fund your wallet","Add money through verified Paystack checkout."],["03","Choose a service","Select marketplace, airtime, data, electricity or SMS."],["04","Track the outcome","See the real provider-confirmed transaction status."]].map(([number,title,copy]) => <article key={number}><span>{number}</span><div><Check size={16} /></div><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
 
     <section id="security" className="mk-section shell"><div className="mk-security"><div><span className="mk-dark-kicker">Security by design</span><h2>Built to protect every transaction.</h2><p>Private provider keys stay on the server. Wallet credits are verified, atomic and protected against duplication.</p><Link href="/register" className="mk-light-button">Create your account <ArrowRight size={14} /></Link><div className="mk-security-grid">{[[LockKeyhole,"Private API credentials"],[CreditCard,"Verified wallet funding"],[ShieldCheck,"Server-side authorization"],[ReceiptText,"Auditable transactions"]].map(([Icon,label]) => <div key={String(label)}><span><Icon size={18} /></span><b>{String(label)}</b></div>)}</div></div><div className="mk-security-art"><Image src="/visuals/nextlogs-security-shield.png" alt="Electric-blue security shield and lock" width={1024} height={1024} /></div></div></section>
 
