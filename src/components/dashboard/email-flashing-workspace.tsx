@@ -14,10 +14,10 @@ type EmailTemplate = {
 };
 
 const templates: EmailTemplate[] = [
-  { id: "welcome", title: "Welcome email", description: "A polished onboarding message for customers who have opted in.", status: "available", icon: Sparkles, accent: "blue" },
-  { id: "order", title: "Order update", description: "Clear payment, delivery, and marketplace order notifications.", status: "available", icon: FileText, accent: "emerald" },
-  { id: "newsletter", title: "Newsletter", description: "A structured campaign layout for permission-based subscribers.", status: "available", icon: Megaphone, accent: "amber" },
-  { id: "security", title: "Security alert", description: "Account activity and safety notifications with strong hierarchy.", status: "coming_soon", icon: BellRing, accent: "rose" },
+  { id: "welcome", title: "Binance", description: "A clean interface card for this layout category. No affiliation is implied.", status: "available", icon: Sparkles, accent: "blue" },
+  { id: "order", title: "Trust Wallet", description: "A structured interface option shown for visual layout comparison only.", status: "available", icon: FileText, accent: "emerald" },
+  { id: "newsletter", title: "Coinbase", description: "A polished category card within the NextLogs preview workspace.", status: "available", icon: Megaphone, accent: "amber" },
+  { id: "security", title: "OKX Wallet", description: "An upcoming interface category with no external wallet connection.", status: "coming_soon", icon: BellRing, accent: "rose" },
 ];
 
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
@@ -49,7 +49,7 @@ export function EmailFlashingWorkspace() {
 
     <section className="email-flash-preview">
       <header><div><p className="ui-eyebrow">Selected template</p><h2>{selected.title}</h2><p>{selected.description}</p></div><span><ShieldCheck size={14} /> Preview mode</span></header>
-      <div className="email-preview-canvas"><div className="email-preview-top"><span><Mail size={18} /></span><div><b>NextLogs</b><small>Verified sender preview</small></div></div><div className="email-preview-body"><small>EMAIL PREVIEW</small><h3>{selected.id === "welcome" ? "Welcome to a simpler digital experience" : selected.id === "order" ? "Your order update is ready" : "Fresh updates from NextLogs"}</h3><p>This is a safe layout preview. Content, recipients, and verified sender details will be configured only when a compliant delivery provider is added.</p><span>Primary call to action</span></div></div>
+      <div className="email-preview-canvas"><div className="email-preview-top"><span><Mail size={18} /></span><div><b>NextLogs</b><small>Verified sender preview</small></div></div><div className="email-preview-body"><small>EMAIL PREVIEW</small><h3>{selected.title} layout preview</h3><p>This is a safe NextLogs interface preview. It does not connect to, impersonate, or claim affiliation with the named wallet platform.</p><span>Primary call to action</span></div></div>
       <footer><div><ShieldCheck size={16} /><p><b>Delivery is not enabled</b><span>No email is sent from this preview workspace.</span></p></div><button type="button" disabled>Continue to draft <ArrowRight size={14} /></button></footer>
     </section>
   </div>;
