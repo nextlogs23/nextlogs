@@ -42,8 +42,11 @@ const supportedBrands = [
 ];
 
 function ProductPreview() {
-  return <div className="mk-preview">
-    <Image src="/visuals/nextlogs-hero-devices-cutout.png" alt="Two premium smartphones displaying an abstract NextLogs digital-services interface" width={1536} height={1024} priority className="mk-hero-art mk-hero-art-cutout" />
+  return <div className="mk-preview mk-people-preview">
+    <div className="mk-person-orbit" aria-hidden="true" />
+    <Image src="/visuals/nextlogs-customer-hero-v2.png" alt="A Nextlogs customer using digital services on her smartphone" width={1024} height={1536} priority sizes="(max-width: 760px) 92vw, 44vw" className="mk-hero-person" />
+    <div className="mk-device-float"><Image src="/visuals/nextlogs-hero-devices-cutout.png" alt="Nextlogs dashboard displayed on mobile devices" width={1536} height={1024} priority sizes="(max-width: 760px) 58vw, 25vw" /></div>
+    <div className="mk-human-chip"><span><BadgeCheck size={17} /></span><p><b>One secure workspace</b><small>Payments, services and history</small></p></div>
   </div>;
 }
 
@@ -58,6 +61,8 @@ export default function Home() {
     <section className="shell mk-assurance" aria-label="Platform safeguards">{assurances.map(({ title, copy, icon: Icon }) => <article key={title}><span><Icon size={19} /></span><div><h2>{title}</h2><p>{copy}</p></div></article>)}</section>
 
     <section id="services" className="mk-catalog-section"><div className="shell mk-section"><div className="mk-section-heading"><div><span className="mk-kicker"><i /> Explore Nextlogs</span><h2>Everything you need in one connected platform</h2><p>Choose a service, review the details and follow the real transaction outcome from your account.</p></div><Link href="/register" className="mk-secondary">Create an account <ArrowRight size={14} /></Link></div><div className="mk-service-grid">{services.map(({ title, tag, copy, href, icon: Icon }, index) => <Link href={href} className={`mk-service tone-${index + 1} ${index < 2 ? "featured" : ""}`} key={title}><div className="mk-service-top"><span><Icon size={21} /></span><small>0{index + 1}</small></div><em>{tag}</em><h3>{title}</h3><p>{copy}</p><b>Explore {title.toLowerCase()} <ArrowRight size={13} /></b></Link>)}</div></div></section>
+
+    <section className="mk-human-story shell"><div className="mk-human-story-media"><Image src="/visuals/nextlogs-customer-story-v2.png" alt="Two people reviewing everyday digital services together on a smartphone" width={1792} height={896} sizes="(max-width: 900px) 100vw, 52vw" /></div><div className="mk-human-story-copy"><span className="mk-kicker"><i /> Designed around real life</span><h2>Useful services for everyday moments.</h2><p>From topping up a phone to paying a meter or accessing an approved digital product, Nextlogs keeps each step clear and connected to one account.</p><div>{["Review details before payment","Follow provider-confirmed outcomes","Find every transaction in one history"].map(item => <span key={item}><Check size={15} /> {item}</span>)}</div><Link href="/register" className="mk-primary">Open your account <ArrowRight size={14} /></Link></div></section>
 
     <section className="mk-benefit-section shell"><div className="mk-benefit-intro"><span className="mk-kicker"><i /> Why Nextlogs</span><h2>A clearer way to manage digital services</h2><p>Designed around secure payments, real provider results and a single account history.</p><Link href="/register" className="mk-primary">Start with Nextlogs <ArrowRight size={14} /></Link></div><div className="mk-benefit-grid">{benefits.map(({ title, copy, icon: Icon }, index) => <article key={title}><span><Icon size={20} /></span><small>0{index + 1}</small><h3>{title}</h3><p>{copy}</p></article>)}</div></section>
 
