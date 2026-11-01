@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BadgeCheck, BarChart3, Bolt, CalendarDays, ChevronRight, CircleDollarSign, Clock3, CreditCard, MessageSquareText, PhoneCall, Plus, ReceiptText, ShieldCheck, WalletCards, Wifi } from "lucide-react";
+import { ArrowRight, BadgeCheck, BarChart3, Bolt, CalendarDays, ChevronRight, CircleAlert, CircleDollarSign, Clock3, CreditCard, MessageSquareText, PhoneCall, Plus, ReceiptText, ShieldCheck, Store, WalletCards, Wifi } from "lucide-react";
 import { auth } from "@/lib/firebase/client";
 import { api } from "@/lib/api-client";
 
@@ -13,6 +13,8 @@ const services = [
   { name: "Buy airtime", copy: "Recharge supported networks", href: "/dashboard/airtime", icon: PhoneCall, color: "blue" },
   { name: "Buy data", copy: "Browse live data bundles", href: "/dashboard/data", icon: Wifi, color: "cyan" },
   { name: "Electricity bills", copy: "Validate and pay your meter", href: "/dashboard/electricity", icon: Bolt, color: "amber" },
+  { name: "Digital marketplace", copy: "Browse available products", href: "/dashboard/marketplace", icon: Store, color: "violet" },
+  { name: "Wallet funding", copy: "Add funds through Paystack", href: "/dashboard/wallet", icon: WalletCards, color: "emerald" },
 ] as const;
 
 function dateText(value: Transaction["createdAt"]) {
@@ -34,6 +36,7 @@ export function DashboardHome() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [name, setName] = useState("there");
   const [today, setToday] = useState("Today");
 
@@ -45,6 +48,7 @@ export function DashboardHome() {
       if (!active) return;
       if (wallet.status === "fulfilled") setBalance(wallet.value.balanceMinor);
       if (activity.status === "fulfilled") setTransactions(activity.value.transactions);
+      setLoadError(wallet.status === "rejected" || activity.status === "rejected");
       setLoading(false);
     });
     return () => { active = false; };
@@ -62,9 +66,11 @@ export function DashboardHome() {
   return <div className="dash2-page">
     <header className="dash2-greeting"><div><p className="ui-eyebrow">Account overview</p><h1>Good morning, {name}</h1><p>Here&apos;s what&apos;s happening with your account today.</p></div><div className="dash2-date"><CalendarDays size={15} /> {today}</div></header>
 
+    {loadError && <div className="dash2-error" role="alert"><span><CircleAlert size={18} /></span><div><b>Some account information could not be loaded</b><p>Your available data is still shown below. Refresh to try the failed request again.</p></div><button type="button" onClick={() => window.location.reload()}>Refresh</button></div>}
+
     <section className="dash2-summary">
       <article className="dash2-wallet"><div className="dash2-wallet-top"><span><WalletCards size={19} /></span><small>Primary wallet</small></div><p>Available balance</p><h2>{loading ? "—" : money(balance)}</h2><div className="dash2-wallet-bottom"><span><ShieldCheck size={13} /> Secure wallet ledger</span><Link href="/dashboard/wallet"><Plus size={14} /> Fund wallet</Link></div></article>
-      <div className="dash2-stat-grid"><Stat icon={ReceiptText} label="Transactions" value={String(transactions.length)} caption="All account activity" loading={loading} /><Stat icon={BadgeCheck} label="Successful" value={String(successful.length)} caption="Provider-confirmed" loading={loading} /><Stat icon={Clock3} label="Pending" value={String(pending.length)} caption="Awaiting confirmation" loading={loading} /><Stat icon={CircleDollarSign} label="Total spending" value={money(spent)} caption="Successful purchases" loading={loading} /></div>
+      <div className="dash2-stat-area"><div className="dash2-stat-label"><span>Account overview</span><small>Live account data</small></div><div className="dash2-stat-grid"><Stat icon={ReceiptText} label="Transactions" value={String(transactions.length)} caption="All account activity" loading={loading} /><Stat icon={BadgeCheck} label="Successful" value={String(successful.length)} caption="Provider-confirmed" loading={loading} /><Stat icon={Clock3} label="Pending" value={String(pending.length)} caption="Awaiting confirmation" loading={loading} /><Stat icon={CircleDollarSign} label="Total spending" value={money(spent)} caption="Successful purchases" loading={loading} /></div></div>
     </section>
 
     <section className="dash2-panel"><div className="dash2-panel-head"><div><p className="ui-eyebrow">Quick services</p><h2>What would you like to do?</h2></div><Link href="/dashboard/services">View all services <ArrowRight size={14} /></Link></div><div className="dash2-services">{services.map(({ name: title, copy, href, icon: Icon, color }) => <Link href={href} key={title} className="dash2-service"><span className={color}><Icon size={19} /></span><div><h3>{title}</h3><p>{copy}</p></div><ChevronRight size={17} /></Link>)}</div></section>

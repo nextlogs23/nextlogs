@@ -3,15 +3,15 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function ThemeToggle({ compact = false }: { compact?: boolean }) {
+export function ThemeToggle({ compact = false, defaultDark = false }: { compact?: boolean; defaultDark?: boolean }) {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("nextlogs-theme") || window.localStorage.getItem("dmb-theme");
-    const enabled = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const enabled = stored === "dark" || (!stored && (defaultDark || window.matchMedia("(prefers-color-scheme: dark)").matches));
     document.documentElement.classList.toggle("dark", enabled);
     setDark(enabled);
-  }, []);
+  }, [defaultDark]);
 
   function toggle() {
     const next = !dark;

@@ -44,6 +44,10 @@ const customerNav: NavItem[] = [
   ["Transactions", "transactions", CreditCard], ["Notifications", "notifications", Bell], ["Profile", "profile", UserRound], ["Support", "support", CircleHelp],
 ];
 
+const customerMobileNav: NavItem[] = [
+  ["Home", "", Gauge], ["Services", "services", Store], ["Wallet", "wallet", WalletCards], ["History", "transactions", CreditCard], ["Profile", "profile", UserRound],
+];
+
 const adminNav: NavItem[] = [
   ["Overview", "", Gauge], ["Users", "users", Users], ["Marketplace", "marketplace", Store], ["SMS orders", "sms-orders", MessageSquareText],
   ["Airtime orders", "airtime-orders", PhoneCall], ["Data orders", "data-orders", Smartphone], ["Electricity", "electricity-orders", Bolt],
@@ -168,11 +172,11 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
             <button onClick={() => setMobileOpen(true)} className="portal-mobile-menu" aria-label="Open navigation"><Menu size={19} /></button>
             <div className="min-w-0"><p className="portal-topbar-kicker">{adminMode ? "Admin console" : "Customer portal"}</p><h1 className="truncate">{current}</h1></div>
           </div>
+          <div className="portal-search-wrap"><label className="portal-search"><Search size={15} /><input id="portal-navigation-search" value={searchQuery} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 140)} onChange={(event) => { setSearchQuery(event.target.value); setSearchOpen(true); }} placeholder="Search services and pages…" aria-label="Search workspace pages" /><kbd>/</kbd></label>{searchOpen && <div className="portal-search-results"><div><span>{searchQuery ? "Matching pages" : "Quick navigation"}</span><small>{searchResults.length} result{searchResults.length === 1 ? "" : "s"}</small></div>{searchResults.length ? searchResults.map(([label, slug, Icon]) => <Link key={label} href={pathFor(adminMode, slug)} onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearchOpen(false); setSearchQuery(""); }}><Icon size={16} /><span><b>{label}</b><small>{adminMode ? "Admin console" : "Customer workspace"}</small></span><ChevronRight size={14} /></Link>) : <p>No page matches “{searchQuery}”.</p>}</div>}</div>
           <div className="portal-topbar-actions">
-            <div className="portal-search-wrap"><label className="portal-search"><Search size={15} /><input id="portal-navigation-search" value={searchQuery} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 140)} onChange={(event) => { setSearchQuery(event.target.value); setSearchOpen(true); }} placeholder="Go to a page…" aria-label="Search workspace pages" /><kbd>/</kbd></label>{searchOpen && <div className="portal-search-results"><div><span>{searchQuery ? "Matching pages" : "Quick navigation"}</span><small>{searchResults.length} result{searchResults.length === 1 ? "" : "s"}</small></div>{searchResults.length ? searchResults.map(([label, slug, Icon]) => <Link key={label} href={pathFor(adminMode, slug)} onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearchOpen(false); setSearchQuery(""); }}><Icon size={16} /><span><b>{label}</b><small>{adminMode ? "Admin console" : "Customer workspace"}</small></span><ChevronRight size={14} /></Link>) : <p>No page matches “{searchQuery}”.</p>}</div>}</div>
-            <ThemeToggle compact />
+            <ThemeToggle compact defaultDark={!adminMode} />
             <div className="relative">
-              <button onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }} className="portal-icon-button" aria-label="Notifications"><Bell size={17} /><span /></button>
+              <button onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }} className="portal-icon-button" aria-label="Notifications"><Bell size={17} /></button>
               {notificationsOpen && <div className="portal-popover portal-notifications"><div className="portal-popover-head"><div><b>Notifications</b><p>Account and service updates</p></div><button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><div className="ui-empty min-h-[190px]"><span className="ui-empty-icon"><Bell size={20} /></span><b className="mt-4 text-sm">You&apos;re all caught up</b><p className="mt-2 text-xs text-[var(--muted)]">New updates will appear here.</p></div></div>}
             </div>
             <div className="relative">
@@ -182,7 +186,7 @@ export function AppShell({ adminMode = false, children }: { adminMode?: boolean;
           </div>
         </header>
         <main className="portal-content">{children}</main>
-        {!adminMode && <nav className="portal-mobile-bottom">{customerNav.slice(0, 5).map(([label, slug, Icon]) => { const href = pathFor(false, slug); return <Link key={label} href={href} className={path === href ? "is-active" : ""}><Icon size={19} /><span>{label === "SMS verification" ? "SMS" : label.replace("Buy ", "")}</span></Link>; })}</nav>}
+        {!adminMode && <nav className="portal-mobile-bottom">{customerMobileNav.map(([label, slug, Icon]) => { const href = pathFor(false, slug); return <Link key={label} href={href} className={path === href ? "is-active" : ""}><Icon size={19} /><span>{label}</span></Link>; })}</nav>}
       </div>
     </div>
   );
