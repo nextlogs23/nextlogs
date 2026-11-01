@@ -619,3 +619,128 @@ html.dark .portal-shell:not(.portal-admin) .portal-mobile-bottom{border-color:#1
 @media(max-width:1180px){.portal-shell:not(.portal-admin) .portal-topbar{display:flex}.portal-shell:not(.portal-admin) .portal-search-wrap{display:none}.dash2-summary{grid-template-columns:360px minmax(0,1fr)}}
 @media(max-width:860px){.dash2-summary{grid-template-columns:1fr}.dash2-stat-area .dash2-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash2-services{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.portal-shell:not(.portal-admin) .portal-content{padding:18px 12px 108px}.dash2-greeting h1{font-size:24px}.dash2-stat-area{padding:12px}.dash2-stat-area .dash2-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dash2-stat-area .dash2-stat{min-height:118px}.dash2-services{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.dash2-service{min-height:145px;padding:13px}.dash2-service>div{margin-top:16px}.dash2-lower{grid-template-columns:1fr}.dash2-error{grid-template-columns:auto 1fr}.dash2-error button{grid-column:1/-1}.portal-mobile-bottom a{font-size:8px}}
+
+/* Mobile dashboard hardening: compact, stable and safe-area aware. */
+@media(max-width:1023px){
+  .portal-shell:not(.portal-admin){overflow-x:clip}
+  .portal-shell:not(.portal-admin) .portal-sidebar{width:min(88vw,320px);padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  .portal-shell:not(.portal-admin) .portal-topbar{height:64px;padding:0 16px}
+  .portal-shell:not(.portal-admin) .portal-content{width:100%;padding-bottom:calc(108px + env(safe-area-inset-bottom))}
+  .portal-shell:not(.portal-admin) .portal-mobile-bottom{right:10px;bottom:max(8px,env(safe-area-inset-bottom));left:10px;min-height:64px;padding:6px}
+  .portal-shell:not(.portal-admin) .portal-mobile-bottom a{min-height:50px;justify-content:center;touch-action:manipulation}
+  .portal-shell:not(.portal-admin) .portal-mobile-bottom a svg{flex:0 0 auto}
+  .dash2-services{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dash2-service{min-height:128px}
+  .overflow-x-auto{overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+}
+
+@media(max-width:760px){
+  .portal-shell:not(.portal-admin) .portal-topbar{gap:10px;border-bottom-color:color-mix(in srgb,var(--brand) 18%,var(--line));padding-right:12px;padding-left:12px}
+  .portal-shell:not(.portal-admin) .portal-topbar>div:first-child{gap:9px}
+  .portal-shell:not(.portal-admin) .portal-mobile-menu,.portal-shell:not(.portal-admin) .portal-icon-button,.portal-shell:not(.portal-admin) .portal-profile-button{width:40px;height:40px;min-width:40px;border-radius:12px}
+  .portal-shell:not(.portal-admin) .portal-topbar-actions{margin-left:auto;gap:6px}
+  .portal-shell:not(.portal-admin) .portal-profile-button{padding:0}
+  .portal-shell:not(.portal-admin) .portal-profile-button>span{width:30px;height:30px}
+  .portal-shell:not(.portal-admin) .portal-content{padding:18px 14px calc(108px + env(safe-area-inset-bottom))}
+  .portal-shell:not(.portal-admin) .portal-popover{position:fixed;right:12px;top:72px;max-height:calc(100dvh - 92px);overflow:auto}
+  .portal-shell:not(.portal-admin) .portal-notifications{width:calc(100vw - 24px)}
+  .portal-shell:not(.portal-admin) .portal-profile-menu{width:min(230px,calc(100vw - 24px))}
+
+  .workspace-heading{display:grid;gap:14px;margin-bottom:18px}
+  .workspace-heading>div{min-width:0}
+  .workspace-heading h1{font-size:clamp(1.65rem,8vw,2rem);line-height:1.08}
+  .workspace-heading>div>p:last-child{max-width:42rem;font-size:11px;line-height:1.6}
+  .workspace-heading>.ui-button-secondary{display:flex;width:100%;justify-content:center}
+  .ui-card{border-radius:16px}
+  .ui-card.p-5,.ui-card.sm\:p-6,.ui-card.sm\:p-7{padding:18px}
+  .workspace-card-title{align-items:flex-start}
+  .workspace-card-title>span{width:36px;height:36px;flex:0 0 36px}
+  .workspace-divider{margin:22px 0}
+
+  .dash2-page{gap:13px}
+  .dash2-greeting{align-items:flex-start;flex-direction:column;gap:4px;padding:0}
+  .dash2-greeting h1{margin-top:4px;font-size:clamp(1.45rem,7vw,1.8rem);line-height:1.08}
+  .dash2-greeting>div>p:last-child{font-size:10px;line-height:1.55}
+  .dash2-summary{gap:12px}
+  .dash2-wallet{min-height:166px;padding:17px}
+  .dash2-wallet>p{margin-top:16px}
+  .dash2-wallet h2{font-size:27px}
+  .dash2-stat-area{border-radius:16px;padding:11px}
+  .dash2-stat-label{padding-bottom:10px}
+  .dash2-stat-area .dash2-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dash2-stat-area .dash2-stat{min-height:108px;padding:12px}
+  .dash2-stat strong{margin-top:13px;font-size:18px}
+  .dash2-stat p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dash2-panel{border-radius:16px}
+  .dash2-panel-head{align-items:center;padding:15px}
+  .dash2-panel-head h2{font-size:15px}
+  .dash2-panel-head>a{white-space:nowrap}
+  .dash2-services{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px}
+  .dash2-service{min-height:124px;padding:13px}
+  .dash2-service>span{width:38px;height:38px}
+  .dash2-service>div{margin-top:13px;padding-right:0}
+  .dash2-service h3{font-size:10px;line-height:1.25}
+  .dash2-service p{display:-webkit-box;overflow:hidden;font-size:8px;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .dash2-service>svg{right:10px;bottom:10px}
+  .dash2-lower{gap:12px}
+  .dash2-list>div{grid-template-columns:auto minmax(0,1fr);padding:12px 14px}
+  .dash2-list>div>div:last-child{grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left}
+  .dash2-list strong{font-size:10px}
+  .dash2-status{margin-top:0}
+  .dash2-empty.compact{min-height:160px;padding:20px}
+
+  .purchase-layout,.wallet-grid{grid-template-columns:1fr!important;gap:14px}
+  .purchase-aside{position:static;order:2;border-radius:16px;padding:18px}
+  .network-grid{gap:8px}
+  .network-card{min-height:82px}
+  .amount-options{gap:8px}
+  .amount-options button{height:47px}
+  .plan-grid{gap:8px}
+  .plan-grid button{min-height:68px}
+  .verification-summary,.premium-wallet{border-radius:18px}
+  .premium-wallet{min-height:195px;padding:20px}
+  .premium-wallet h2{font-size:28px}
+  .table-toolbar{gap:12px;padding:16px}
+  .table-toolbar h2{font-size:15px}
+  .premium-table{min-width:650px}
+  .premium-table th{padding:10px 14px}
+  .premium-table td{padding:13px 14px}
+  .service-gallery-card{min-height:112px;padding:15px}
+  .service-gallery-card>span{width:42px;height:42px}
+
+  .portal-shell:not(.portal-admin) input,.portal-shell:not(.portal-admin) select,.portal-shell:not(.portal-admin) textarea,.portal-shell:not(.portal-admin) .country-search input,.portal-shell:not(.portal-admin) .wallet-amount-input input{font-size:16px!important}
+  .portal-shell:not(.portal-admin) .ui-input{min-height:50px}
+  .portal-shell:not(.portal-admin) textarea.ui-input{min-height:130px}
+  .portal-shell:not(.portal-admin) .country-search{min-height:50px}
+  .portal-shell:not(.portal-admin) button,.portal-shell:not(.portal-admin) a{touch-action:manipulation}
+  .modal-layer{align-items:end;padding:0}
+  .modal-card{width:100%;max-height:92dvh;overflow-y:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+}
+
+@media(max-width:430px){
+  .portal-shell:not(.portal-admin) .portal-topbar{height:60px}
+  .portal-shell:not(.portal-admin) .portal-topbar h1{max-width:124px;font-size:13px}
+  .portal-shell:not(.portal-admin) .portal-topbar-kicker{display:none}
+  .portal-shell:not(.portal-admin) .portal-mobile-menu,.portal-shell:not(.portal-admin) .portal-icon-button,.portal-shell:not(.portal-admin) .portal-profile-button{width:38px;height:38px;min-width:38px}
+  .portal-shell:not(.portal-admin) .portal-content{padding:15px 10px calc(104px + env(safe-area-inset-bottom))}
+  .portal-shell:not(.portal-admin) .portal-mobile-bottom{right:6px;left:6px;border-radius:17px;padding:5px}
+  .portal-shell:not(.portal-admin) .portal-mobile-bottom a{min-height:49px;gap:3px;padding:6px 2px;font-size:7px}
+  .portal-shell:not(.portal-admin) .portal-mobile-bottom a svg{width:18px;height:18px}
+  .dash2-wallet h2{font-size:25px}
+  .dash2-wallet-bottom a{padding:9px 10px}
+  .dash2-stat-area .dash2-stat{min-height:104px;padding:11px}
+  .dash2-stat-top>span{width:32px;height:32px}
+  .dash2-stat-top small{letter-spacing:.07em}
+  .dash2-stat strong{font-size:17px}
+  .dash2-stat p{display:none}
+  .dash2-services{gap:7px;padding:8px}
+  .dash2-service{min-height:118px;padding:11px}
+  .dash2-service>span{width:36px;height:36px}
+  .workspace-heading h1{font-size:1.55rem}
+  .workspace-heading>div>p:last-child{font-size:10px}
+  .ui-card.p-5,.ui-card.sm\:p-6,.ui-card.sm\:p-7{padding:15px}
+  .country-grid,.sms-service-grid{gap:8px}
+  .country-grid button,.sms-service-grid button{min-height:58px;padding:10px}
+  .modal-summary{padding-right:11px;padding-left:11px}
+  .modal-summary p{gap:10px}
+}
