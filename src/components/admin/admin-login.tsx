@@ -48,7 +48,6 @@ export function AdminLogin() {
               ? "The administrator email or password is incorrect."
               : "The administrator verification service could not complete. Please try again.";
       setError(message);
-      toast.error(message);
     } finally {
       setBusy(false);
     }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { ArrowLeft, ArrowRight, BadgeCheck, Eye, EyeOff, LockKeyhole, Mail, Phone, ShieldCheck, Sparkles, UserRound, WalletCards, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, CircleAlert, Eye, EyeOff, LockKeyhole, Mail, Phone, ShieldCheck, Sparkles, UserRound, WalletCards, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -19,16 +19,30 @@ const content = {
   forgot: { eyebrow: "Account recovery", title: "Reset your password", description: "Enter your email and we will send you a secure reset link.", button: "Send reset link" },
 };
 
+function friendlyAuthError(error: unknown, mode: Mode) {
+  const detail = error instanceof Error ? error.message.toLowerCase() : "";
+  if (detail.includes("auth/invalid-credential") || detail.includes("auth/wrong-password") || detail.includes("auth/user-not-found")) return "The email or password you entered is incorrect. Please check your details and try again.";
+  if (detail.includes("auth/email-already-in-use")) return "An account already exists with this email address. Try signing in instead.";
+  if (detail.includes("auth/invalid-email")) return "Enter a valid email address to continue.";
+  if (detail.includes("auth/weak-password")) return "Choose a stronger password with at least eight characters.";
+  if (detail.includes("auth/too-many-requests")) return "Too many attempts were made. Please wait a moment before trying again.";
+  if (detail.includes("auth/user-disabled")) return "This account is currently unavailable. Please contact support for help.";
+  if (detail.includes("auth/network-request-failed")) return "We could not connect securely. Check your internet connection and try again.";
+  return mode === "forgot" ? "We could not send the reset email right now. Please try again." : mode === "register" ? "We could not create your account right now. Please try again." : "We could not sign you in right now. Please try again.";
+}
+
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
+  const [formError, setFormError] = useState("");
   const copy = content[mode];
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFormError("");
     if (!firebaseConfigured) {
-      toast.error("Firebase is not configured. Add the public Firebase environment variables first.");
+      setFormError("Account access is temporarily unavailable. Please try again later.");
       return;
     }
     setBusy(true);
@@ -52,7 +66,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       }
       router.push("/dashboard");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to continue");
+      setFormError(friendlyAuthError(error, mode));
     } finally {
       setBusy(false);
     }
@@ -89,6 +103,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             <span className="auth2-eyebrow"><LockKeyhole size={13} /> {copy.eyebrow}</span>
             <h2>{copy.title}</h2>
             <p className="auth2-description">{copy.description}</p>
+            {formError && <div className="auth2-error" role="alert"><CircleAlert size={17} /><span>{formError}</span></div>}
 
             <form onSubmit={submit} className="auth2-form">
               {mode === "register" && <>
