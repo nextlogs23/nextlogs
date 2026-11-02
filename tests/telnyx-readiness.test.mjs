@@ -25,6 +25,14 @@ test("search requests exact SMS-capable inventory and the UI previews exact numb
   assert.match(workspace, /Purchase selected number/);
 });
 
+test("country selector exposes broad Telnyx coverage while inventory remains live-filtered", () => {
+  const countries = read("src/lib/telnyx-countries.ts");
+  const workspace = read("src/components/dashboard/workspace.tsx");
+  assert.ok((countries.match(/"[A-Z]{2}"/g) || []).length >= 100);
+  for (const code of ["US", "GB", "CA", "NG", "ZA", "KE", "AU", "DE", "FR"]) assert.match(countries, new RegExp(`"${code}"`));
+  assert.match(workspace, /Only live SMS-capable inventory is shown/);
+});
+
 test("admin health check performs read-only authentication, inventory and profile checks", () => {
   const route = read("src/app/api/admin/telnyx/health/route.ts");
   assert.match(route, /requireAdmin/);

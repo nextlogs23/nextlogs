@@ -42,6 +42,7 @@ import {
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { auth } from "@/lib/firebase/client";
+import { telnyxCountries } from "@/lib/telnyx-countries";
 import { VtuWorkspace as VtuServiceWorkspace } from "./vtu-workspace";
 
 type Transaction = { id: string; reference?: string; serviceType?: string; amountMinor?: number; retailPriceMinor?: number; status?: string; providerReference?: string; createdAt?: string | { seconds?: number } };
@@ -54,11 +55,7 @@ const networks = [
   { id: "mtn", name: "MTN", logo: "/logos/mtn.png" }, { id: "airtel", name: "Airtel", logo: "/logos/airtel.png" },
   { id: "glo", name: "Glo", logo: "/logos/glo.png" }, { id: "9mobile", name: "9mobile", logo: "/logos/9mobile.png" },
 ] as const;
-const countries = [
-  { code: "US", name: "United States", dial: "+1", flag: "🇺🇸" },
-  { code: "GB", name: "United Kingdom", dial: "+44", flag: "🇬🇧" }, { code: "CA", name: "Canada", dial: "+1", flag: "🇨🇦" },
-  { code: "DE", name: "Germany", dial: "+49", flag: "🇩🇪" }, { code: "FR", name: "France", dial: "+33", flag: "🇫🇷" },
-];
+const countries = telnyxCountries;
 const discos = ["ikeja-electric", "eko-electric", "abuja-electric", "ibadan-electric", "enugu-electric", "portharcourt-electric", "kano-electric"];
 
 function PageHeader({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: ReactNode }) {
@@ -161,9 +158,9 @@ function TelnyxWorkspace() {
     <StepRail current={step} />
     <div className="mt-5 grid items-start gap-5 xl:grid-cols-[1.15fr_.85fr]">
       <section className="ui-card p-5 sm:p-6">
-        <div className="workspace-card-title"><span>01</span><div><h2>Choose a country</h2><p>Find available SMS-capable numbers in your preferred destination.</p></div></div>
+        <div className="workspace-card-title"><span>01</span><div><h2>Choose a country</h2><p>Search {countries.length} Telnyx coverage destinations. Only live SMS-capable inventory is shown.</p></div></div>
         <label className="country-search"><Search size={15} /><input value={countrySearch} onChange={(event) => setCountrySearch(event.target.value)} placeholder="Search country" /></label>
-        <div className="country-grid">{visibleCountries.map((item) => <button type="button" key={item.code} onClick={() => searchNumbers(item.code)} className={country === item.code ? "is-selected" : ""}><span>{item.flag}</span><div><b>{item.name}</b><small>{item.dial}</small></div>{country === item.code && <Check size={14} />}</button>)}</div>
+        <div className="country-grid country-list-scroll">{visibleCountries.map((item) => <button type="button" key={item.code} onClick={() => searchNumbers(item.code)} className={country === item.code ? "is-selected" : ""}><span>{item.flag}</span><div><b>{item.name}</b><small>ISO {item.code}</small></div>{country === item.code && <Check size={14} />}</button>)}</div>
         <div className="workspace-divider" />
         <div className="workspace-card-title"><span>02</span><div><h2>Select an exact number</h2><p>Results and prices expire after ten minutes.</p></div></div>
         {loading ? <div className="service-skeleton-grid">{[1, 2, 3, 4].map((item) => <div key={item} />)}</div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelected(offer); setActiveOrder(null); }} className={selected?.id === offer.id ? "is-selected" : ""}><span><PhoneCall size={18} /></span><div><b>{offer.phoneNumber}</b><small>{money(offer.retailPriceMinor)} · SMS capable</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="Search available numbers" copy="Select a country above to see currently available SMS-capable numbers. Availability is always checked live." action={<button type="button" onClick={() => searchNumbers()} className="ui-button-secondary"><Search size={15} /> Search {countries.find((item) => item.code === country)?.name}</button>} />}
