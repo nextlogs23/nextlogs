@@ -74,7 +74,7 @@ async function fetchServices(client: VtugateClient, serviceType: string) {
   return value;
 }
 
-function serviceName(item: Json) { return str(item.network_name || item.name || item.service_name); }
+function serviceName(item: Json) { return str(item.network_name || item.tv_name || item.disco || item.edu_type || item.name || item.service_name); }
 function serviceId(item: Json) { return str(item.service_id || item.id); }
 function matchesNetwork(item: Json, network: string) {
   const name = slug(serviceName(item));
@@ -95,6 +95,25 @@ function discoCode(item: Json) {
   const name = slug(serviceName(item));
   const mappings: Array<[string, string]> = [["abuja", "aedc"], ["aba", "aba"], ["benin", "benin"], ["eko", "ekedc"], ["enugu", "enugu"], ["ibadan", "ibedc"], ["ikeja", "ikedc"], ["jos", "jos"], ["kaduna", "kaduna"], ["kano", "kedco"], ["port-harcourt", "portharcourt"], ["yola", "yola"]];
   return mappings.find(([part]) => name.includes(part))?.[1] || name;
+}
+
+function electricityDisplayName(item: Json) {
+  const code = discoCode(item);
+  const names: Record<string, string> = {
+    aba: "Aba Electric (APLE)",
+    aedc: "Abuja Electricity (AEDC)",
+    benin: "Benin Electricity (BEDC)",
+    ekedc: "Eko Electricity (EKEDC)",
+    enugu: "Enugu Electricity (EEDC)",
+    ibedc: "Ibadan Electricity (IBEDC)",
+    ikedc: "Ikeja Electric (IKEDC)",
+    jos: "Jos Electricity (JED)",
+    kaduna: "Kaduna Electric (KAEDCO)",
+    kedco: "Kano Electricity (KEDCO)",
+    portharcourt: "Port Harcourt Electricity (PHED)",
+    yola: "Yola Electricity (YEDC)",
+  };
+  return names[code] || serviceName(item).replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function providerCost(data: Json, requestedMinor: number) {
@@ -164,13 +183,13 @@ export class VtugateProvider implements VtuProvider {
   }
 
   async electricityProviders(): Promise<ElectricityProvider[]> {
-    return (await fetchServices(this.client, "electricity")).map((item) => ({ id: serviceId(item), name: serviceName(item), code: discoCode(item) })).filter((item) => item.id && item.name);
+    return (await fetchServices(this.client, "electricity")).map((item) => ({ id: serviceId(item), name: electricityDisplayName(item), code: discoCode(item) })).filter((item) => item.id && item.name && item.code);
   }
 
   private async electricityProvider(id: string) {
     const item = (await fetchServices(this.client, "electricity")).find((row) => serviceId(row) === id);
     if (!item) throw new VtugateError("This electricity provider is unavailable", 409, true);
-    return { id, code: discoCode(item), name: serviceName(item) };
+    return { id, code: discoCode(item), name: electricityDisplayName(item) };
   }
 
   async validateMeter(input: { provider: string; meterType: string; meterNumber: string }) {
