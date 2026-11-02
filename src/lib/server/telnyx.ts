@@ -15,6 +15,23 @@ export type TelnyxOffer = {
   retailPriceMinor: number;
 };
 
+type TelnyxErrorItem = {
+  code?: string | number;
+  detail?: string;
+  title?: string;
+};
+
+type TelnyxApiErrorShape = {
+  status?: number;
+  statusCode?: number;
+  message?: string;
+  errors?: TelnyxErrorItem[];
+  error?: {
+    message?: string;
+    errors?: TelnyxErrorItem[];
+  };
+};
+
 function required(name: string) {
   const value = process.env[name]?.trim();
   if (!value) throw Object.assign(new Error(`${name} is not configured`), { status: 503 });
@@ -38,15 +55,24 @@ function dollarsToNairaMinor(value: string | undefined) {
 }
 
 export async function searchTelnyxNumbers(countryCode: string, limit = 20): Promise<TelnyxOffer[]> {
-  const response = await telnyxClient().availablePhoneNumbers.list({
-    filter: {
-      country_code: countryCode,
-      features: ["sms"],
-      limit: Math.min(Math.max(limit, 1), 50),
-      best_effort: false,
-      exclude_held_numbers: true,
-    },
-  });
+  const response = await (async () => {
+    try {
+      return await telnyxClient().availablePhoneNumbers.list({
+        filter: {
+          country_code: countryCode,
+          features: ["sms"],
+          limit: Math.min(Math.max(limit, 1), 50),
+          best_effort: false,
+          exclude_held_numbers: true,
+        },
+      });
+    } catch (error) {
+      // Telnyx uses error 10015 when a country has no inventory matching the
+      // requested SMS capability. This is a valid empty search, not an outage.
+      if (isTelnyxNoCoverageError(error)) return { data: [] };
+      throw normalizeTelnyxError(error);
+    }
+  })();
   const markup = Number.parseFloat(process.env.TELNYX_NUMBER_MARKUP_PERCENT || "20");
   if (!Number.isFinite(markup) || markup < 0 || markup > 500) {
     throw Object.assign(new Error("TELNYX_NUMBER_MARKUP_PERCENT is invalid"), { status: 503 });
@@ -80,8 +106,25 @@ export function stableTelnyxReference(uid: string, idempotencyKey: string) {
   return `NXL-TEL-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`;
 }
 
+export function isTelnyxNoCoverageError(error: unknown) {
+  const candidate = error as TelnyxApiErrorShape;
+  const items = [
+    ...(Array.isArray(candidate.errors) ? candidate.errors : []),
+    ...(Array.isArray(candidate.error?.errors) ? candidate.error.errors : []),
+  ];
+  const serialized = [
+    candidate.message,
+    candidate.error?.message,
+    ...items.flatMap((item) => [String(item.code ?? ""), item.title, item.detail]),
+  ].filter(Boolean).join(" ");
+
+  const hasNoCoverageMessage = /no coverage found|no coverage.*specified country/i.test(serialized);
+  const hasNoCoverageCode = items.some((item) => String(item.code) === "10015") || /\b10015\b/.test(serialized);
+  return hasNoCoverageCode && hasNoCoverageMessage;
+}
+
 export function normalizeTelnyxError(error: unknown) {
-  const candidate = error as { status?: number; statusCode?: number; message?: string; error?: { message?: string } };
+  const candidate = error as TelnyxApiErrorShape;
   const providerStatus = candidate.status ?? candidate.statusCode;
   const status = providerStatus === 404 || providerStatus === 409 || providerStatus === 422 ? 409 : providerStatus === 401 || providerStatus === 403 ? 503 : 502;
   const message = status === 409

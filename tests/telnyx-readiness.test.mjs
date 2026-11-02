@@ -33,6 +33,14 @@ test("country selector exposes broad Telnyx coverage while inventory remains liv
   assert.match(workspace, /Only live SMS-capable inventory is shown/);
 });
 
+test("countries without live SMS inventory produce an empty search instead of a raw Telnyx error", () => {
+  const provider = read("src/lib/server/telnyx.ts");
+  assert.match(provider, /isTelnyxNoCoverageError/);
+  assert.match(provider, /String\(item\.code\) === "10015"/);
+  assert.match(provider, /no coverage found/i);
+  assert.match(provider, /return \{ data: \[\] \}/);
+});
+
 test("admin health check performs read-only authentication, inventory and profile checks", () => {
   const route = read("src/app/api/admin/telnyx/health/route.ts");
   assert.match(route, /requireAdmin/);
