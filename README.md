@@ -82,7 +82,7 @@ Prices are converted from provider USD to wallet NGN using `SMSPOOL_USD_NGN_RATE
 
 ## VTU integration
 
-Implement `VtuProvider` in `src/lib/server/providers.ts` for VTpass or another compatible provider. Use the provider's sandbox first. Data plans must be retrieved live. Meter ownership must be validated before electricity payment. Persist the provider reference and raw provider status, and show prepaid tokens only when returned by a confirmed successful provider response.
+The server-side `VtuProvider` uses VTUGATE with Bearer-token authentication. Use a VTUGATE Test API Key first. Data and cable plans are retrieved live, meter and smartcard ownership are verified before payment, provider references and raw statuses are persisted, and prepaid tokens are shown only when returned by a confirmed successful provider response.
 
 If a provider request times out after the wallet debit, leave the transaction in a review/processing state and reconcile with the provider before refunding. Never assume a timeout is a failure.
 

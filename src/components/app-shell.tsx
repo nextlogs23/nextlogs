@@ -26,6 +26,7 @@ import {
   Settings,
   Shield,
   Smartphone,
+  Tv,
   UserRound,
   Users,
   WalletCards,
@@ -40,7 +41,7 @@ type NavItem = readonly [string, string, typeof Gauge];
 
 const customerNav: NavItem[] = [
   ["Overview", "", Gauge], ["Marketplace", "marketplace", Store], ["Email Flashing", "email-flashing", Mail], ["SMS verification", "sms", Shield], ["Buy airtime", "airtime", PhoneCall],
-  ["Buy data", "data", Smartphone], ["Electricity bills", "electricity", Bolt], ["Fund wallet", "wallet", WalletCards],
+  ["Buy data", "data", Smartphone], ["Electricity bills", "electricity", Bolt], ["Cable TV", "cable", Tv], ["Fund wallet", "wallet", WalletCards],
   ["Transactions", "transactions", CreditCard], ["Notifications", "notifications", Bell], ["Profile", "profile", UserRound], ["Support", "support", CircleHelp],
 ];
 
@@ -50,7 +51,7 @@ const customerMobileNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   ["Overview", "", Gauge], ["Users", "users", Users], ["Marketplace", "marketplace", Store], ["SMS orders", "sms-orders", MessageSquareText],
-  ["Airtime orders", "airtime-orders", PhoneCall], ["Data orders", "data-orders", Smartphone], ["Electricity", "electricity-orders", Bolt],
+  ["Airtime orders", "airtime-orders", PhoneCall], ["Data orders", "data-orders", Smartphone], ["Electricity", "electricity-orders", Bolt], ["Cable TV", "cable-orders", Tv],
   ["Wallet activity", "wallet-transactions", WalletCards], ["API providers", "providers", Activity], ["Pricing", "pricing", Settings],
   ["Analytics", "analytics", ChartNoAxesCombined], ["Notifications", "notifications", Bell], ["Settings", "settings", Settings],
 ];

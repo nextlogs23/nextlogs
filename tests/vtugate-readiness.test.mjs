@@ -1,0 +1,16 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+const read = (path) => readFile(path, "utf8");
+
+test("VTUGATE credentials stay server-only and purchases default off", async () => { const env = await read(".env.example"); assert.match(env, /VTU_PROVIDER=vtugate/); assert.match(env, /VTUGATE_PURCHASES_ENABLED=false/); assert.doesNotMatch(env, /NEXT_PUBLIC_VTUGATE/); });
+test("VTUGATE uses Bearer authentication and form encoded bodies", async () => { const source = await read("src/lib/server/vtugate.ts"); assert.match(source, /Authorization: `Bearer/); assert.match(source, /application\/x-www-form-urlencoded/); assert.match(source, /new URLSearchParams/); });
+test("VTUGATE official host is pinned", async () => { const source = await read("src/lib/server/vtugate.ts"); assert.match(source, /https:\/\/api\.vtugate\.com/); assert.match(source, /override !== official/); });
+test("airtime data electricity and cable endpoints are implemented", async () => { const source = await read("src/lib/server/vtugate.ts"); for (const endpoint of ["buyairtime", "fetchdataplans", "buydata", "verifyelectricity", "buyelectricity", "verifycabletv", "fetchcableplans", "buycabletv"]) assert.match(source, new RegExp(endpoint)); });
+test("client references provide provider-side idempotency and requery", async () => { const source = await read("src/lib/server/vtugate.ts"); assert.match(source, /client_reference: input\.reference/); assert.match(source, /transactionstatus/); assert.match(source, /client_reference: reference/); });
+test("transaction failure cannot be overridden by top-level request success", async () => { const source = await read("src/lib/server/vtugate.ts"); assert.match(source, /hasTransactionState/); assert.match(source, /!hasTransactionState && payload\.status === true/); });
+test("wallet flow reserves atomically and refunds only known failures", async () => { const order = await read("src/lib/server/vtu-order.ts"); const reconcile = await read("src/lib/server/vtu-reconcile.ts"); assert.match(order, /reservation\.idempotent/); assert.match(order, /result\.status === "failed"/); assert.match(order, /providerError\.outcomeKnown/); assert.match(reconcile, /result\.status === "failed"/); assert.match(reconcile, /finalizePurchaseRefund/); });
+test("airtime split risk is disabled with a five thousand naira cap", async () => { const source = await read("src/lib/server/vtugate.ts"); assert.match(source, /500_000/); assert.match(source, /split delivery is disabled/); });
+test("admin monitoring and pricing use VTUGATE routes", async () => { const admin = await read("src/app/api/admin/vtugate/orders/route.ts"); const pricing = await read("src/app/api/admin/vtugate/pricing/route.ts"); assert.match(admin, /requireAdmin/); assert.match(admin, /reconcileVtu/); assert.match(pricing, /provider: "vtugate"/); assert.match(pricing, /adminAuditLogs/); });
+test("Firestore denies client access to VTU operational collections", async () => { const rules = await read("firestore.rules"); assert.match(rules, /vtuIdempotency/); assert.match(rules, /vtuMeterVerifications/); assert.match(rules, /vtuCableVerifications/); assert.match(rules, /cableOrders/); });

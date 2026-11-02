@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BadgeCheck, BarChart3, Bolt, CalendarDays, ChevronRight, CircleDollarSign, Clock3, CreditCard, MessageSquareText, PhoneCall, Plus, ReceiptText, ShieldCheck, Store, WalletCards, Wifi } from "lucide-react";
+import { ArrowRight, BadgeCheck, BarChart3, Bolt, CalendarDays, ChevronRight, CircleDollarSign, Clock3, CreditCard, MessageSquareText, PhoneCall, Plus, ReceiptText, ShieldCheck, Store, Tv, WalletCards, Wifi } from "lucide-react";
 import { auth } from "@/lib/firebase/client";
 import { api } from "@/lib/api-client";
 
@@ -13,6 +13,7 @@ const services = [
   { name: "Buy airtime", copy: "Recharge supported networks", href: "/dashboard/airtime", icon: PhoneCall, color: "blue" },
   { name: "Buy data", copy: "Browse live data bundles", href: "/dashboard/data", icon: Wifi, color: "cyan" },
   { name: "Electricity bills", copy: "Validate and pay your meter", href: "/dashboard/electricity", icon: Bolt, color: "amber" },
+  { name: "Cable TV", copy: "Verify and renew a subscription", href: "/dashboard/cable", icon: Tv, color: "violet" },
   { name: "Digital marketplace", copy: "Browse available products", href: "/dashboard/marketplace", icon: Store, color: "violet" },
   { name: "Wallet funding", copy: "Add funds through Paystack", href: "/dashboard/wallet", icon: WalletCards, color: "emerald" },
 ] as const;

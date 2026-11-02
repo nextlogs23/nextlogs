@@ -14,7 +14,7 @@
     "test:smspool": "node --test tests/smspool-readiness.test.mjs",
     "test:telnyx": "node --test tests/telnyx-readiness.test.mjs",
     "test:marketplace": "node --test tests/marketplace-readiness.test.mjs",
-    "test:vtpass": "node --test tests/vtpass-readiness.test.mjs"
+    "test:vtugate": "node --test tests/vtugate-readiness.test.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.2",

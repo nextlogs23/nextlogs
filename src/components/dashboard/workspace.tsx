@@ -32,6 +32,7 @@ import {
   ShieldCheck,
   Smartphone,
   Store,
+  Tv,
   UserRound,
   WalletCards,
   Wifi,
@@ -41,7 +42,7 @@ import {
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { auth } from "@/lib/firebase/client";
-import { VtpassWorkspace } from "./vtpass-workspace";
+import { VtuWorkspace as VtuServiceWorkspace } from "./vtu-workspace";
 
 type Transaction = { id: string; reference?: string; serviceType?: string; amountMinor?: number; retailPriceMinor?: number; status?: string; providerReference?: string; createdAt?: string | { seconds?: number } };
 type SmsService = { id: string; name: string; priceMinor?: number; costMinor?: number };
@@ -234,7 +235,7 @@ function WalletWorkspace() {
 }
 
 function ServicesWorkspace() {
-  const items = [{ title: "Digital marketplace", copy: "Preview numbers, creative assets, templates, and approved digital products.", href: "/dashboard/marketplace", icon: Store }, { title: "Email Flashing", copy: "Build polished email drafts and previews for verified sender identities.", href: "/dashboard/email-flashing", icon: Mail }, { title: "SMS verification", copy: "Rent provider-supported numbers and receive real messages.", href: "/dashboard/sms", icon: MessageSquareText }, { title: "Airtime recharge", copy: "Top up MTN, Airtel, Glo and 9mobile numbers.", href: "/dashboard/airtime", icon: PhoneCall }, { title: "Mobile data", copy: "Browse live network bundles and complete checkout.", href: "/dashboard/data", icon: Wifi }, { title: "Electricity bills", copy: "Validate meters and pay supported Nigerian DISCOs.", href: "/dashboard/electricity", icon: Bolt }, { title: "Wallet funding", copy: "Add money securely using Paystack verification.", href: "/dashboard/wallet", icon: WalletCards }];
+  const items = [{ title: "Digital marketplace", copy: "Preview numbers, creative assets, templates, and approved digital products.", href: "/dashboard/marketplace", icon: Store }, { title: "Email Flashing", copy: "Build polished email drafts and previews for verified sender identities.", href: "/dashboard/email-flashing", icon: Mail }, { title: "SMS verification", copy: "Rent provider-supported numbers and receive real messages.", href: "/dashboard/sms", icon: MessageSquareText }, { title: "Airtime recharge", copy: "Top up MTN, Airtel, Glo and 9mobile numbers.", href: "/dashboard/airtime", icon: PhoneCall }, { title: "Mobile data", copy: "Browse live network bundles and complete checkout.", href: "/dashboard/data", icon: Wifi }, { title: "Electricity bills", copy: "Validate meters and pay supported Nigerian DISCOs.", href: "/dashboard/electricity", icon: Bolt }, { title: "Cable TV", copy: "Verify a smartcard and choose an available subscription.", href: "/dashboard/cable", icon: Tv }, { title: "Wallet funding", copy: "Add money securely using Paystack verification.", href: "/dashboard/wallet", icon: WalletCards }];
   return <><PageHeader eyebrow="Service centre" title="Everything in one place" copy="Choose a service and complete it through a focused, secure flow." /><div className="services-gallery">{items.map(({ title, copy, href, icon: Icon }, index) => <Link href={href} key={title} className="service-gallery-card"><span className={index % 2 ? "rose" : "blue"}><Icon size={22} /></span><div><h2>{title}</h2><p>{copy}</p></div><ChevronRight size={18} /></Link>)}</div></>;
 }
 
@@ -245,7 +246,7 @@ function ProfileOrSupport({ type }: { type: "profile" | "support" }) {
 
 export function CustomerWorkspace({ section = "services" }: { section?: string }) {
   if (section === "sms") return <SmsWorkspace />;
-  if (section === "airtime" || section === "data" || section === "electricity") return <VtpassWorkspace type={section} />;
+  if (section === "airtime" || section === "data" || section === "electricity" || section === "cable") return <VtuServiceWorkspace type={section} />;
   if (section === "wallet") return <WalletWorkspace />;
   if (section === "transactions") return <><PageHeader eyebrow="Account activity" title="Transactions" copy="Every wallet credit, purchase, provider outcome, and refund in one searchable ledger." /><TransactionsTable kind="all" /></>;
   if (section === "notifications") return <><PageHeader eyebrow="Notification centre" title="Updates that matter" copy="Payment confirmations, service updates, and security notices will appear here." /><section className="ui-card"><EmptyState icon={Bell} title="You're all caught up" copy="There are no new notifications for your account." /></section></>;

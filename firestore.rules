@@ -40,8 +40,10 @@ service cloud.firestore {
     match /airtimeOrders/{id} { allow read, write: if false; }
     match /dataOrders/{id} { allow read, write: if false; }
     match /electricityOrders/{id} { allow read, write: if false; }
+    match /cableOrders/{id} { allow read, write: if false; }
     match /vtuIdempotency/{id} { allow read, write: if false; }
     match /vtuMeterVerifications/{id} { allow read, write: if false; }
+    match /vtuCableVerifications/{id} { allow read, write: if false; }
     match /servicePricing/{id} { allow read, write: if false; }
     match /providerConfigurations/{id} { allow read, write: if false; }
     match /platformSettings/{id} { allow read, write: if false; }
