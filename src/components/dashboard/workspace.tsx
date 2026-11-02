@@ -118,6 +118,8 @@ function TelnyxWorkspace() {
   const [messages, setMessages] = useState<InboundMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [unavailableCountries, setUnavailableCountries] = useState<string[]>([]);
+  const [lastEmptyCountry, setLastEmptyCountry] = useState<string | null>(null);
   const visibleCountries = countries.filter((item) => item.name.toLowerCase().includes(countrySearch.toLowerCase()) || item.code.toLowerCase().includes(countrySearch.toLowerCase()));
 
   useEffect(() => { api<{ orders: TelnyxOrder[] }>("/api/sms/orders").then((data) => setOrders(data.orders)).catch(() => {}); }, []);
@@ -127,7 +129,14 @@ function TelnyxWorkspace() {
     try {
       const data = await api<{ numbers: TelnyxNumberOffer[] }>(`/api/sms/numbers?country=${code}&limit=20`);
       setOffers(data.numbers);
-      if (!data.numbers.length) toast.error("No SMS-capable numbers are available for this country right now.");
+      if (!data.numbers.length) {
+        setLastEmptyCountry(code);
+        setUnavailableCountries((current) => current.includes(code) ? current : [...current, code]);
+        toast.info("No live SMS inventory for this country. Please try another destination.");
+      } else {
+        setLastEmptyCountry(null);
+        setUnavailableCountries((current) => current.filter((item) => item !== code));
+      }
     } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to search available numbers"); }
     finally { setLoading(false); }
   }
@@ -160,10 +169,10 @@ function TelnyxWorkspace() {
       <section className="ui-card p-5 sm:p-6">
         <div className="workspace-card-title"><span>01</span><div><h2>Choose a country</h2><p>Search {countries.length} Telnyx coverage destinations. Only live SMS-capable inventory is shown.</p></div></div>
         <label className="country-search"><Search size={15} /><input value={countrySearch} onChange={(event) => setCountrySearch(event.target.value)} placeholder="Search country" /></label>
-        <div className="country-grid country-list-scroll">{visibleCountries.map((item) => <button type="button" key={item.code} onClick={() => searchNumbers(item.code)} className={country === item.code ? "is-selected" : ""}><span>{item.flag}</span><div><b>{item.name}</b><small>ISO {item.code}</small></div>{country === item.code && <Check size={14} />}</button>)}</div>
+        <div className="country-grid country-list-scroll">{visibleCountries.map((item) => { const unavailable = unavailableCountries.includes(item.code); return <button type="button" key={item.code} onClick={() => searchNumbers(item.code)} className={`${country === item.code ? "is-selected" : ""} ${unavailable ? "is-unavailable" : ""}`}><span>{item.flag}</span><div><b>{item.name}</b><small>{unavailable ? "No live SMS inventory" : `ISO ${item.code}`}</small></div>{country === item.code && !unavailable && <Check size={14} />}</button>; })}</div>
         <div className="workspace-divider" />
         <div className="workspace-card-title"><span>02</span><div><h2>Select an exact number</h2><p>Results and prices expire after ten minutes.</p></div></div>
-        {loading ? <div className="service-skeleton-grid">{[1, 2, 3, 4].map((item) => <div key={item} />)}</div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelected(offer); setActiveOrder(null); }} className={selected?.id === offer.id ? "is-selected" : ""}><span><PhoneCall size={18} /></span><div><b>{offer.phoneNumber}</b><small>{money(offer.retailPriceMinor)} · SMS capable</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="Search available numbers" copy="Select a country above to see currently available SMS-capable numbers. Availability is always checked live." action={<button type="button" onClick={() => searchNumbers()} className="ui-button-secondary"><Search size={15} /> Search {countries.find((item) => item.code === country)?.name}</button>} />}
+        {loading ? <div className="service-skeleton-grid">{[1, 2, 3, 4].map((item) => <div key={item} />)}</div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelected(offer); setActiveOrder(null); }} className={selected?.id === offer.id ? "is-selected" : ""}><span><PhoneCall size={18} /></span><div><b>{offer.phoneNumber}</b><small>{money(offer.retailPriceMinor)} · SMS capable</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : lastEmptyCountry === country ? <EmptyState icon={Globe2} title="No live inventory for this country" copy={`Telnyx currently has no SMS-capable numbers in ${countries.find((item) => item.code === country)?.name || country}. Choose another country or check again later.`} action={<button type="button" onClick={() => searchNumbers()} className="ui-button-secondary"><Search size={15} /> Check again</button>} /> : <EmptyState icon={Globe2} title="Search available numbers" copy="Select a country above to see currently available SMS-capable numbers. Availability is always checked live." action={<button type="button" onClick={() => searchNumbers()} className="ui-button-secondary"><Search size={15} /> Search {countries.find((item) => item.code === country)?.name}</button>} />}
       </section>
       <aside className="space-y-5">
         <section className="verification-summary">

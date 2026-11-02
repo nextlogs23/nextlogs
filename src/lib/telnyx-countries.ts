@@ -8,14 +8,14 @@ const countryCodes = [
   "DE", "GH", "GR", "GD", "GP", "GT", "HN", "HK", "HU", "IS", "ID", "IE",
   "IL", "IT", "JM", "JP", "JO", "KZ", "KE", "KW", "KG", "LV", "LB", "LT",
   "LU", "MO", "MK", "MY", "MT", "MQ", "MU", "YT", "MX", "MD", "MC", "ME",
-  "MA", "MM", "NP", "NL", "NZ", "NI", "NG", "NO", "OM", "PK", "PA", "PY",
+  "MA", "MM", "NP", "NL", "NZ", "NI", "NO", "OM", "PK", "PA", "PY",
   "PE", "PH", "PL", "PT", "PR", "QA", "RE", "RO", "KN", "LC", "VC", "SA",
   "RS", "SC", "SG", "SK", "SI", "ZA", "KR", "ES", "LK", "SE", "CH", "TW",
   "TZ", "TH", "TT", "TN", "TC", "UG", "UA", "AE", "GB", "US", "UY", "VI",
   "VE", "VN", "ZW",
 ] as const;
 
-const pinned = ["US", "GB", "CA", "AU", "DE", "FR", "NL", "IE", "ZA", "NG"];
+const pinned = ["US", "GB", "CA", "AU", "DE", "FR", "NL", "IE", "ZA"];
 const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 function flagFor(code: string) {

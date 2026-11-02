@@ -34,6 +34,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .country-grid button.is-selected b,.sms-service-grid button.is-selected b,.plan-grid button.is-selected b,.network-card.is-selected b{color:var(--ink)}
 .country-grid button.is-selected small,.sms-service-grid button.is-selected small,.plan-grid button.is-selected small{color:var(--muted)}
 .country-grid button.is-selected>svg,.sms-service-grid button.is-selected>svg,.network-card.is-selected>svg,.plan-grid button.is-selected>svg{color:var(--brand)}
+.country-grid button.is-unavailable{border-color:color-mix(in srgb,#e07a62 26%,var(--line));background:color-mix(in srgb,#e07a62 5%,var(--surface-soft));opacity:.72}
+.country-grid button.is-unavailable small{color:#b4533c}
+.country-grid button.is-unavailable:hover{border-color:color-mix(in srgb,#e07a62 45%,var(--line));background:color-mix(in srgb,#e07a62 9%,var(--surface-soft));opacity:1}
 .sms-service-grid button{min-height:72px;padding:13px}.sms-service-grid button>span{width:40px;height:40px;border-radius:11px;background:color-mix(in srgb,var(--brand) 10%,var(--surface));color:var(--brand)}
 .amount-options button{height:46px;font-size:12px}.network-card b{font-size:12px}
 
@@ -59,6 +62,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 html.dark .portal-nav-link:hover{background:rgba(111,169,239,.09);color:#a8d0ff}html.dark .portal-nav-link.is-active{border-color:rgba(111,169,239,.2);background:rgba(111,169,239,.13);color:#b8d9ff}
 html.dark .country-grid button.is-selected,html.dark .sms-service-grid button.is-selected,html.dark .network-card.is-selected,html.dark .plan-grid button.is-selected,html.dark .amount-options button.is-selected{border-color:#5c9be3;background:#1b3855;color:#f3f8fd;box-shadow:0 0 0 3px rgba(111,169,239,.12)}
 html.dark .country-grid button.is-selected b,html.dark .sms-service-grid button.is-selected b,html.dark .plan-grid button.is-selected b,html.dark .network-card.is-selected b{color:#f3f8fd}html.dark .country-grid button.is-selected small,html.dark .sms-service-grid button.is-selected small,html.dark .plan-grid button.is-selected small{color:#b6c7d8}
+html.dark .country-grid button.is-unavailable{border-color:#65433e;background:#2a2629}html.dark .country-grid button.is-unavailable small{color:#e7a798}
 html.dark .workspace-card-title>span,html.dark .sms-service-grid button>span,html.dark .purchase-aside-icon{background:rgba(111,169,239,.12);color:#91bff4}html.dark .compliance-note{border-color:#2a435d;background:#15283b;color:#91bff4}
 
 @media(max-width:1023px){.portal-content{padding-bottom:122px}.portal-mobile-bottom{right:12px;bottom:12px;left:12px;border-color:color-mix(in srgb,var(--brand) 12%,var(--line));border-radius:20px;background:color-mix(in srgb,var(--surface) 98%,transparent);padding:8px;box-shadow:0 18px 50px rgba(6,27,50,.2)}.portal-mobile-bottom a{min-height:50px;justify-content:center;gap:5px;border:1px solid transparent;border-radius:13px;font-size:9px}.portal-mobile-bottom a:hover{background:color-mix(in srgb,var(--brand) 6%,var(--surface));color:var(--brand)}.portal-mobile-bottom a.is-active{border-color:color-mix(in srgb,var(--brand) 12%,var(--line));background:color-mix(in srgb,var(--brand) 10%,var(--surface));color:var(--brand)}}

@@ -29,7 +29,8 @@ test("country selector exposes broad Telnyx coverage while inventory remains liv
   const countries = read("src/lib/telnyx-countries.ts");
   const workspace = read("src/components/dashboard/workspace.tsx");
   assert.ok((countries.match(/"[A-Z]{2}"/g) || []).length >= 100);
-  for (const code of ["US", "GB", "CA", "NG", "ZA", "KE", "AU", "DE", "FR"]) assert.match(countries, new RegExp(`"${code}"`));
+  for (const code of ["US", "GB", "CA", "ZA", "KE", "AU", "DE", "FR"]) assert.match(countries, new RegExp(`"${code}"`));
+  assert.doesNotMatch(countries, /"NG"/);
   assert.match(workspace, /Only live SMS-capable inventory is shown/);
 });
 
