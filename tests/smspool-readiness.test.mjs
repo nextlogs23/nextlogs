@@ -29,11 +29,21 @@ test("adapter uses the documented catalogue, order, status and rental endpoints"
   ]) assert.ok(provider.includes(`"${endpoint}"`), `Missing ${endpoint}`);
 });
 
-test("customer UI describes provider assignment instead of exact-number selection", () => {
+test("customer UI offers provider-neutral short-term, monthly and business number choices", () => {
   const workspace = read("src/components/dashboard/workspace.tsx");
-  assert.match(workspace, /SMSPool assigns the phone number only after a successful order/);
+  assert.match(workspace, /Temporary number/);
+  assert.match(workspace, /Monthly rental/);
+  assert.match(workspace, /Business number/);
+  assert.match(workspace, /ProviderAssignedNumberWorkspace key="temporary" mode="one_time"/);
+  assert.match(workspace, /ProviderAssignedNumberWorkspace key="monthly" mode="rental"/);
   assert.match(workspace, /Number assigned after purchase/);
-  assert.match(workspace, /does not provide a browsable exact-number inventory/);
+  assert.match(workspace, /Exact-number selection is unavailable for this service/);
+});
+
+test("restricted destination services are filtered server-side", () => {
+  const provider = read("src/lib/server/smspool.ts");
+  assert.match(provider, /RESTRICTED_SERVICE_NAME/);
+  assert.match(provider, /!RESTRICTED_SERVICE_NAME\.test\(item\.name\)/);
 });
 
 test("SMSPool reservation and refunds are idempotent and atomic", () => {

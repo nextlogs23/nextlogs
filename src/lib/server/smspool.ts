@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 const BASE_URL = process.env.SMSPOOL_API_URL?.replace(/\/$/, "") || "https://api.smspool.net";
+const RESTRICTED_SERVICE_NAME = /\b(bank|banking|paypal|cash\s?app|venmo|crypto|binance|coinbase|kraken|government|identity|kyc|telecom|carrier)\b/i;
 
 export type SmsPoolCountry = { id: number; name: string; shortName: string; region: string };
 export type SmsPoolService = { id: number; name: string };
@@ -60,7 +61,7 @@ export async function smsPoolCountries(): Promise<SmsPoolCountry[]> {
 
 export async function smsPoolServices(countryId: number): Promise<SmsPoolService[]> {
   const result = await request<Array<{ ID?: number; name?: string }>>("/service/retrieve_all", { method: "GET", form: { country: countryId } });
-  return result.flatMap((item) => item.ID && item.name ? [{ id: item.ID, name: item.name }] : []);
+  return result.flatMap((item) => item.ID && item.name && !RESTRICTED_SERVICE_NAME.test(item.name) ? [{ id: item.ID, name: item.name }] : []);
 }
 
 export async function smsPoolOffers(countryId: number, serviceId: number): Promise<SmsPoolOffer[]> {

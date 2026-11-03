@@ -195,33 +195,199 @@ type SmsPoolOffer = { id: string; poolId: number; poolName: string; stock: numbe
 type SmsPoolRentalOffer = { id: string; rentalId: number; name: string; region: string; days: number; refundable: boolean; refundWithinHours: number; retailPriceMinor: number; expiresAt: string };
 type SmsPoolOrder = { id?: string; reference: string; phoneNumber?: string | null; countryName?: string | null; serviceName?: string | null; name?: string; days?: number; status: string; retailPriceMinor?: number; expiresAt?: string | null };
 
+// Kept temporarily for migration compatibility with older dashboard bundles.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SmsPoolWorkspace() {
   const [mode, setMode] = useState<"one_time" | "rental">("one_time"); const [countriesList, setCountriesList] = useState<SmsPoolCountry[]>([]); const [country, setCountry] = useState<SmsPoolCountry | null>(null); const [services, setServices] = useState<SmsPoolService[]>([]); const [service, setService] = useState<SmsPoolService | null>(null); const [offers, setOffers] = useState<SmsPoolOffer[]>([]); const [selected, setSelected] = useState<SmsPoolOffer | null>(null); const [rentalOffers, setRentalOffers] = useState<SmsPoolRentalOffer[]>([]); const [selectedRental, setSelectedRental] = useState<SmsPoolRentalOffer | null>(null); const [orders, setOrders] = useState<SmsPoolOrder[]>([]); const [rentals, setRentals] = useState<SmsPoolOrder[]>([]); const [active, setActive] = useState<(SmsPoolOrder & { kind: "one_time" | "rental" }) | null>(null); const [messages, setMessages] = useState<InboundMessage[]>([]); const [loading, setLoading] = useState(false); const [buying, setBuying] = useState(false); const [query, setQuery] = useState(""); const [serviceQuery, setServiceQuery] = useState("");
-  useEffect(() => { Promise.all([api<{ countries: SmsPoolCountry[] }>("/api/smspool/catalog").then((data) => setCountriesList(data.countries)), api<{ orders: SmsPoolOrder[] }>("/api/smspool/orders").then((data) => setOrders(data.orders)), api<{ rentals: SmsPoolOrder[] }>("/api/smspool/rentals").then((data) => setRentals(data.rentals))]).catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load SMSPool")); }, []);
+  useEffect(() => { Promise.all([api<{ countries: SmsPoolCountry[] }>("/api/smspool/catalog").then((data) => setCountriesList(data.countries)), api<{ orders: SmsPoolOrder[] }>("/api/smspool/orders").then((data) => setOrders(data.orders)), api<{ rentals: SmsPoolOrder[] }>("/api/smspool/rentals").then((data) => setRentals(data.rentals))]).catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load number services")); }, []);
   useEffect(() => { if (mode !== "rental" || rentalOffers.length) return; setLoading(true); api<{ offers: SmsPoolRentalOffer[] }>("/api/smspool/rentals/catalog").then((data) => setRentalOffers(data.offers)).catch((error) => toast.error(error.message)).finally(() => setLoading(false)); }, [mode, rentalOffers.length]);
   async function chooseCountry(item: SmsPoolCountry) { setCountry(item); setService(null); setOffers([]); setSelected(null); setLoading(true); try { const data = await api<{ services: SmsPoolService[] }>(`/api/smspool/catalog?country=${item.id}`); setServices(data.services); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to load services"); } finally { setLoading(false); } }
-  async function chooseService(item: SmsPoolService) { if (!country) return; setService(item); setSelected(null); setLoading(true); try { const data = await api<{ offers: SmsPoolOffer[]; exactNumberSelectionSupported: boolean }>(`/api/smspool/offers?country=${country.id}&service=${item.id}`); setOffers(data.offers); if (!data.offers.length) toast.error("No SMSPool stock is available for this selection."); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to load pricing"); } finally { setLoading(false); } }
-  async function purchase() { const offerId = mode === "rental" ? selectedRental?.id : selected?.id; if (!offerId) return; setBuying(true); try { const path = mode === "rental" ? "/api/smspool/rentals" : "/api/smspool/orders"; const result = await api<{ reference: string; number?: string | null; status: string; expiresAt?: string }>(path, { method: "POST", body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }) }); const next: SmsPoolOrder = { reference: result.reference, phoneNumber: result.number, status: result.status, retailPriceMinor: mode === "rental" ? selectedRental?.retailPriceMinor : selected?.retailPriceMinor, expiresAt: result.expiresAt, ...(mode === "rental" ? { name: selectedRental?.name, days: selectedRental?.days } : { countryName: country?.name, serviceName: service?.name }) }; if (mode === "rental") setRentals((rows) => [next, ...rows]); else setOrders((rows) => [next, ...rows]); setActive({ ...next, kind: mode }); toast.success("SMSPool order submitted."); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to purchase"); } finally { setBuying(false); } }
+  async function chooseService(item: SmsPoolService) { if (!country) return; setService(item); setSelected(null); setLoading(true); try { const data = await api<{ offers: SmsPoolOffer[]; exactNumberSelectionSupported: boolean }>(`/api/smspool/offers?country=${country.id}&service=${item.id}`); setOffers(data.offers); if (!data.offers.length) toast.error("No live stock is available for this selection."); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to load pricing"); } finally { setLoading(false); } }
+  async function purchase() { const offerId = mode === "rental" ? selectedRental?.id : selected?.id; if (!offerId) return; setBuying(true); try { const path = mode === "rental" ? "/api/smspool/rentals" : "/api/smspool/orders"; const result = await api<{ reference: string; number?: string | null; status: string; expiresAt?: string }>(path, { method: "POST", body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }) }); const next: SmsPoolOrder = { reference: result.reference, phoneNumber: result.number, status: result.status, retailPriceMinor: mode === "rental" ? selectedRental?.retailPriceMinor : selected?.retailPriceMinor, expiresAt: result.expiresAt, ...(mode === "rental" ? { name: selectedRental?.name, days: selectedRental?.days } : { countryName: country?.name, serviceName: service?.name }) }; if (mode === "rental") setRentals((rows) => [next, ...rows]); else setOrders((rows) => [next, ...rows]); setActive({ ...next, kind: mode }); toast.success(mode === "rental" ? "Monthly rental submitted." : "Temporary number order submitted."); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to purchase"); } finally { setBuying(false); } }
   async function refresh(item: SmsPoolOrder, kind: "one_time" | "rental") { try { const path = kind === "rental" ? `/api/smspool/rentals/${item.reference}` : `/api/smspool/orders/${item.reference}`; const data = await api<{ number?: string | null; status: string; expiresAt?: string | null; messages: InboundMessage[] }>(path); setActive({ ...item, phoneNumber: data.number, status: data.status, expiresAt: data.expiresAt, kind }); setMessages(data.messages); const setter = kind === "rental" ? setRentals : setOrders; setter((rows) => rows.map((row) => row.reference === item.reference ? { ...row, phoneNumber: data.number, status: data.status, expiresAt: data.expiresAt } : row)); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to refresh order"); } }
   const filteredCountries = countriesList.filter((item) => `${item.name} ${item.shortName}`.toLowerCase().includes(query.toLowerCase())); const filteredServices = services.filter((item) => item.name.toLowerCase().includes(serviceQuery.toLowerCase())); const currentOffer = mode === "rental" ? selectedRental : selected; const rows = [...orders.map((item) => ({ ...item, kind: "one_time" as const })), ...rentals.map((item) => ({ ...item, kind: "rental" as const }))];
   return <><PageHeader eyebrow="Alternative SMS provider" title="SMSPool verification" copy="Browse live country, service, stock and price data. SMSPool assigns the phone number only after a successful order." action={<Link href="/dashboard/transactions" className="ui-button-secondary"><History size={15} /> Purchase history</Link>} /><div className="amount-options mt-5 max-w-md"><button type="button" className={mode === "one_time" ? "is-selected" : ""} onClick={() => { setMode("one_time"); setActive(null); }}>One-time SMS</button><button type="button" className={mode === "rental" ? "is-selected" : ""} onClick={() => { setMode("rental"); setActive(null); }}>Rentals</button></div><div className="mt-5 grid items-start gap-5 xl:grid-cols-[1.15fr_.85fr]"><section className="ui-card p-5 sm:p-6">{mode === "one_time" ? <><div className="workspace-card-title"><span>01</span><div><h2>Country and service</h2><p>Loaded directly from SMSPool.</p></div></div><label className="country-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search country" /></label><div className="country-grid">{filteredCountries.slice(0, 12).map((item) => <button type="button" key={item.id} onClick={() => chooseCountry(item)} className={country?.id === item.id ? "is-selected" : ""}><span>{item.shortName}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}</button>)}</div>{country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Choose the permitted destination service.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search all services" /></label><div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Service ID {item.id}</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></>}{service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select an available provider pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelected(offer)} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div>}</>}</> : <><div className="workspace-card-title"><span>01</span><div><h2>Choose rental duration</h2><p>Live rental products and refund eligibility from SMSPool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /><div /></div> : <div className="sms-service-grid">{rentalOffers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelectedRental(offer)} className={selectedRental?.id === offer.id ? "is-selected" : ""}><span><Clock3 size={18} /></span><div><b>{offer.name} · {offer.days} days</b><small>{money(offer.retailPriceMinor)} · {offer.refundable ? `Refundable within ${offer.refundWithinHours}h under provider rules` : "Non-refundable"}</small></div>{selectedRental?.id === offer.id && <Check size={14} />}</button>)}</div>}</>}</section><aside className="space-y-5"><section className="verification-summary"><div className="flex items-center justify-between"><p className="ui-eyebrow text-[#ffb6c8]">Order summary</p><Status value={active?.status || (currentOffer ? "ready" : "pending")} /></div>{active ? <><div className="assigned-number"><small>{active.phoneNumber ? "Assigned number" : "Awaiting assignment"}</small><div><b>{active.phoneNumber || "Pending provider"}</b>{active.phoneNumber && <button onClick={() => navigator.clipboard.writeText(active.phoneNumber!)}><Copy size={15} /></button>}</div><p>Reference: {active.reference}</p></div><button onClick={() => refresh(active, active.kind)} className="verification-refresh"><LoaderCircle size={15} /> Refresh status and inbox</button><div className="sms-inbox">{messages.length ? messages.map((message) => <div key={message.id || `${message.receivedAt}-${message.text}`}><span><Inbox size={15} /></span><div><b>{message.text}</b><small>{message.from || "SMSPool"} · {message.receivedAt}</small></div></div>) : <EmptyState icon={Inbox} title="Waiting for SMS" copy="Only real messages returned by SMSPool will appear here." />}</div></> : <><div className="summary-placeholder"><Smartphone size={26} /><h3>Number assigned after purchase</h3><p>SMSPool does not provide a browsable exact-number inventory. Your number is returned only when the provider accepts the order.</p></div><div className="summary-lines"><p><span>Product</span><b>{mode === "rental" ? selectedRental ? `${selectedRental.name} · ${selectedRental.days} days` : "—" : service?.name || "—"}</b></p><p><span>Availability</span><b>{mode === "rental" ? selectedRental ? "Live rental" : "—" : selected ? selected.stock > 0 ? `${selected.stock} in stock` : "Live" : "—"}</b></p><p><span>Total</span><b>{currentOffer ? money(currentOffer.retailPriceMinor) : "—"}</b></p></div><button disabled={!currentOffer || buying} onClick={purchase} className="ui-button-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45">{buying ? <LoaderCircle className="animate-spin" size={16} /> : <KeyRound size={16} />} Purchase through SMSPool</button></>}</section><div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted verification. Exact-number selection is not presented because SMSPool does not publish exact inventory.</p></div></div></aside></div><section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">SMSPool activity</p><h2>Orders and rentals</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{item.kind === "rental" ? "Rental" : "One-time SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td><td><button type="button" onClick={() => refresh(item, item.kind)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title="No SMSPool orders" copy="Real orders will appear here after testing is completed and purchases are enabled." />}</section></>;
 }
 
-// SMSPool remains integrated server-side but is intentionally hidden from the
-// customer workspace until it is explicitly approved for production use.
-const smsPoolCustomerEnabled = false;
+function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental" }) {
+  const isRental = mode === "rental";
+  const [countriesList, setCountriesList] = useState<SmsPoolCountry[]>([]);
+  const [country, setCountry] = useState<SmsPoolCountry | null>(null);
+  const [services, setServices] = useState<SmsPoolService[]>([]);
+  const [service, setService] = useState<SmsPoolService | null>(null);
+  const [offers, setOffers] = useState<SmsPoolOffer[]>([]);
+  const [selected, setSelected] = useState<SmsPoolOffer | null>(null);
+  const [rentalOffers, setRentalOffers] = useState<SmsPoolRentalOffer[]>([]);
+  const [selectedRental, setSelectedRental] = useState<SmsPoolRentalOffer | null>(null);
+  const [orders, setOrders] = useState<SmsPoolOrder[]>([]);
+  const [rentals, setRentals] = useState<SmsPoolOrder[]>([]);
+  const [active, setActive] = useState<(SmsPoolOrder & { kind: "one_time" | "rental" }) | null>(null);
+  const [messages, setMessages] = useState<InboundMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [query, setQuery] = useState("");
+  const [serviceQuery, setServiceQuery] = useState("");
 
-function SmsWorkspace() {
-  const [experience, setExperience] = useState<"select_number" | "instant_verification">("select_number");
+  useEffect(() => {
+    const historyRequest = isRental
+      ? api<{ rentals: SmsPoolOrder[] }>("/api/smspool/rentals").then((data) => setRentals(data.rentals))
+      : api<{ orders: SmsPoolOrder[] }>("/api/smspool/orders").then((data) => setOrders(data.orders));
+    const catalogRequest = isRental
+      ? api<{ offers: SmsPoolRentalOffer[] }>("/api/smspool/rentals/catalog").then((data) => setRentalOffers(data.offers))
+      : api<{ countries: SmsPoolCountry[] }>("/api/smspool/catalog").then((data) => setCountriesList(data.countries));
 
-  if (!smsPoolCustomerEnabled) return <TelnyxWorkspace />;
+    setLoading(true);
+    Promise.all([historyRequest, catalogRequest])
+      .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load number services"))
+      .finally(() => setLoading(false));
+  }, [isRental]);
+
+  async function chooseCountry(item: SmsPoolCountry) {
+    setCountry(item);
+    setService(null);
+    setOffers([]);
+    setSelected(null);
+    setLoading(true);
+    try {
+      const data = await api<{ services: SmsPoolService[] }>(`/api/smspool/catalog?country=${item.id}`);
+      setServices(data.services);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load services");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function chooseService(item: SmsPoolService) {
+    if (!country) return;
+    setService(item);
+    setSelected(null);
+    setLoading(true);
+    try {
+      const data = await api<{ offers: SmsPoolOffer[] }>(`/api/smspool/offers?country=${country.id}&service=${item.id}`);
+      setOffers(data.offers);
+      if (!data.offers.length) toast.error("No live stock is available for this selection.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load pricing");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function purchase() {
+    const offerId = isRental ? selectedRental?.id : selected?.id;
+    if (!offerId) return;
+    setBuying(true);
+    try {
+      const path = isRental ? "/api/smspool/rentals" : "/api/smspool/orders";
+      const result = await api<{ reference: string; number?: string | null; status: string; expiresAt?: string }>(path, {
+        method: "POST",
+        body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }),
+      });
+      const next: SmsPoolOrder = {
+        reference: result.reference,
+        phoneNumber: result.number,
+        status: result.status,
+        retailPriceMinor: isRental ? selectedRental?.retailPriceMinor : selected?.retailPriceMinor,
+        expiresAt: result.expiresAt,
+        ...(isRental
+          ? { name: selectedRental?.name, days: selectedRental?.days }
+          : { countryName: country?.name, serviceName: service?.name }),
+      };
+      if (isRental) setRentals((rows) => [next, ...rows]);
+      else setOrders((rows) => [next, ...rows]);
+      setActive({ ...next, kind: mode });
+      toast.success(isRental ? "Monthly rental submitted." : "Temporary number order submitted.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to purchase");
+    } finally {
+      setBuying(false);
+    }
+  }
+
+  async function refresh(item: SmsPoolOrder, kind: "one_time" | "rental") {
+    try {
+      const path = kind === "rental" ? `/api/smspool/rentals/${item.reference}` : `/api/smspool/orders/${item.reference}`;
+      const data = await api<{ number?: string | null; status: string; expiresAt?: string | null; messages: InboundMessage[] }>(path);
+      const next = { ...item, phoneNumber: data.number, status: data.status, expiresAt: data.expiresAt, kind };
+      setActive(next);
+      setMessages(data.messages);
+      const setter = kind === "rental" ? setRentals : setOrders;
+      setter((rows) => rows.map((row) => row.reference === item.reference ? next : row));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to refresh order");
+    }
+  }
+
+  const filteredCountries = countriesList.filter((item) => `${item.name} ${item.shortName}`.toLowerCase().includes(query.toLowerCase()));
+  const filteredServices = services.filter((item) => item.name.toLowerCase().includes(serviceQuery.toLowerCase()));
+  const currentOffer = isRental ? selectedRental : selected;
+  const rows = isRental
+    ? rentals.map((item) => ({ ...item, kind: "rental" as const }))
+    : orders.map((item) => ({ ...item, kind: "one_time" as const }));
 
   return <>
-    <div className="amount-options mb-5 max-w-md">
-      <button type="button" className={experience === "select_number" ? "is-selected" : ""} onClick={() => setExperience("select_number")}>Select a number</button>
-      <button type="button" className={experience === "instant_verification" ? "is-selected" : ""} onClick={() => setExperience("instant_verification")}>Instant verification</button>
+    <PageHeader
+      eyebrow={isRental ? "Long-term number service" : "Short-term number service"}
+      title={isRental ? "Monthly SMS rental" : "Temporary SMS number"}
+      copy={isRental
+        ? "Choose a renewable rental period and receive genuine inbound messages from supported services."
+        : "Choose a country and permitted service. A live number is assigned only after the order succeeds."}
+      action={<Link href="/dashboard/transactions" className="ui-button-secondary"><History size={15} /> Purchase history</Link>}
+    />
+    <div className="mt-5 grid items-start gap-5 xl:grid-cols-[1.15fr_.85fr]">
+      <section className="ui-card p-5 sm:p-6">
+        {isRental ? <>
+          <div className="workspace-card-title"><span>01</span><div><h2>Choose rental duration</h2><p>Live rental products, terms, and refund eligibility.</p></div></div>
+          {loading ? <div className="service-skeleton-grid"><div /><div /><div /></div> : rentalOffers.length ? <div className="sms-service-grid">
+            {rentalOffers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelectedRental(offer)} className={selectedRental?.id === offer.id ? "is-selected" : ""}>
+              <span><Clock3 size={18} /></span><div><b>{offer.name} · {offer.days} days</b><small>{money(offer.retailPriceMinor)} · {offer.refundable ? `Refundable within ${offer.refundWithinHours}h under provider rules` : "Non-refundable"}</small></div>{selectedRental?.id === offer.id && <Check size={14} />}
+            </button>)}
+          </div> : <EmptyState icon={Clock3} title="No rentals available" copy="No live rental products are available right now. Please check again later." />}
+        </> : <>
+          <div className="workspace-card-title"><span>01</span><div><h2>Country and service</h2><p>Availability is loaded live and never simulated.</p></div></div>
+          <label className="country-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search country" /></label>
+          <div className="country-grid country-list-scroll">{filteredCountries.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseCountry(item)} className={country?.id === item.id ? "is-selected" : ""}>
+            <span>{item.shortName}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
+          </button>)}</div>
+          {country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Only permitted destination services are shown.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label><div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></>}
+          {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelected(offer)} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}
+        </>}
+      </section>
+      <aside className="space-y-5">
+        <section className="verification-summary">
+          <div className="flex items-center justify-between"><p className="ui-eyebrow text-[#ffb6c8]">Order summary</p><Status value={active?.status || (currentOffer ? "ready" : "pending")} /></div>
+          {active ? <><div className="assigned-number"><small>{active.phoneNumber ? "Assigned number" : "Awaiting assignment"}</small><div><b>{active.phoneNumber || "Pending provider"}</b>{active.phoneNumber && <button onClick={() => navigator.clipboard.writeText(active.phoneNumber!)} aria-label="Copy assigned number"><Copy size={15} /></button>}</div><p>Reference: {active.reference}</p></div><button onClick={() => refresh(active, active.kind)} className="verification-refresh"><LoaderCircle size={15} /> Refresh status and inbox</button><div className="sms-inbox">{messages.length ? messages.map((message) => <div key={message.id || `${message.receivedAt}-${message.text}`}><span><Inbox size={15} /></span><div><b>{message.text}</b><small>{message.from || "Message provider"} · {message.receivedAt}</small></div></div>) : <EmptyState icon={Inbox} title="Waiting for SMS" copy="Only genuine messages returned by the number provider will appear here." />}</div></> : <><div className="summary-placeholder"><Smartphone size={26} /><h3>Number assigned after purchase</h3><p>Exact-number selection is unavailable for this service. Your number appears only after the provider accepts the order.</p></div><div className="summary-lines"><p><span>Product</span><b>{isRental ? selectedRental ? `${selectedRental.name} · ${selectedRental.days} days` : "—" : service?.name || "—"}</b></p><p><span>Availability</span><b>{isRental ? selectedRental ? "Live rental" : "—" : selected ? selected.stock > 0 ? `${selected.stock} in stock` : "Live" : "—"}</b></p><p><span>Total</span><b>{currentOffer ? money(currentOffer.retailPriceMinor) : "—"}</b></p></div><button disabled={!currentOffer || buying} onClick={purchase} className="ui-button-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45">{buying ? <LoaderCircle className="animate-spin" size={16} /> : <KeyRound size={16} />} {isRental ? "Start monthly rental" : "Purchase temporary number"}</button></>}
+        </section>
+        <div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted messaging. Automated account creation and verification bypass are prohibited.</p></div></div>
+      </aside>
     </div>
-    {experience === "select_number" ? <TelnyxWorkspace /> : <SmsPoolWorkspace />}
+    <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td><td><button type="button" onClick={() => refresh(item, item.kind)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
+  </>;
+}
+
+function SmsWorkspace() {
+  const [experience, setExperience] = useState<"temporary" | "monthly" | "business">("business");
+  const choices = [
+    { id: "temporary" as const, icon: Bolt, title: "Temporary number", copy: "Short-term, provider-assigned number for one permitted verification." },
+    { id: "monthly" as const, icon: Clock3, title: "Monthly rental", copy: "Renewable number rental for supported receive-only messaging use cases." },
+    { id: "business" as const, icon: Building2, title: "Business number", copy: "Browse and select an exact available number for ongoing messaging." },
+  ];
+
+  return <>
+    <section className="sms-experience-picker" aria-label="Choose number type">
+      <div className="sms-experience-heading"><p className="ui-eyebrow">Choose a number type</p><h2>Short-term or long-term SMS access</h2><p>Select the option that matches your permitted messaging use case.</p></div>
+      <div className="sms-experience-grid">
+        {choices.map(({ id, icon: Icon, title, copy }) => <button type="button" key={id} onClick={() => setExperience(id)} className={experience === id ? "is-selected" : ""} aria-pressed={experience === id}>
+          <span><Icon size={19} /></span><div><b>{title}</b><small>{copy}</small></div>{experience === id && <Check size={16} />}
+        </button>)}
+      </div>
+    </section>
+    <div className="mt-5">
+      {experience === "temporary" && <ProviderAssignedNumberWorkspace key="temporary" mode="one_time" />}
+      {experience === "monthly" && <ProviderAssignedNumberWorkspace key="monthly" mode="rental" />}
+      {experience === "business" && <TelnyxWorkspace />}
+    </div>
   </>;
 }
 
