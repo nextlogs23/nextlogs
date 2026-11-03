@@ -6,11 +6,15 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 test("customer payment proofs require authentication and private image storage", () => {
   const route = read("src/app/api/wallet/manual-funding/route.ts");
+  const workspace = read("src/components/dashboard/workspace.tsx");
   assert.match(route, /requireUser\(request\)/);
   assert.match(route, /access: "private"/);
   assert.match(route, /Only genuine PNG, JPEG, or WebP/);
   assert.match(route, /manualFundingRequests/);
   assert.doesNotMatch(route, /applyWalletEntry|balanceMinor: next/);
+  assert.match(workspace, /<ManualFundingPanel \/>/);
+  assert.match(workspace, /Bank-transfer funding/);
+  assert.match(workspace, /Submit payment proof/);
 });
 
 test("admin review requires a reason and atomically credits approved transfers", () => {
