@@ -95,6 +95,17 @@ test("purchases atomically validate stock and wallet balance", () => {
   assert.match(route, /transaction\.create\(transactionRef/);
 });
 
+test("sold digital-product options disappear atomically after purchase", () => {
+  const route = read("src/app/api/marketplace/orders/route.ts");
+  const details = read("src/components/dashboard/marketplace-product-details.tsx");
+  assert.match(route, /product\.category === "digital_products" && Boolean\(selectedOption\)/);
+  assert.match(route, /active: false, soldReference: reference/);
+  assert.match(route, /productUpdate\.options = nextOptions/);
+  assert.match(route, /productUpdate\.active = false/);
+  assert.match(route, /transaction\.update\(productRef, productUpdate\)/);
+  assert.match(details, /current\.options\.filter\(\(item\) => item\.id !== option\.id\)/);
+});
+
 test("duplicate marketplace purchases use a stable reference", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const route = read("src/app/api/marketplace/orders/route.ts");

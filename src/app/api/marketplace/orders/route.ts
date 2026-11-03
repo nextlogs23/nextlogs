@@ -59,7 +59,14 @@ export async function POST(request: NextRequest) {
       const optionTitle = selectedOption?.title || null;
       const orderTitle = optionTitle ? `${product.title} — ${optionTitle}` : product.title;
       const order = { reference, userId: user.uid, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, providerCostMinor: product.providerCostMinor ?? null, fulfillment: product.fulfillment, deliveryUrl: instant && !downloadFile ? product.deliveryUrl : null, downloadFile, status, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
-      transaction.update(productRef, { stock: product.stock - 1, updatedAt: FieldValue.serverTimestamp() });
+      const singleSaleOption = product.category === "digital_products" && Boolean(selectedOption);
+      const nextOptions = singleSaleOption ? options.map((option) => option?.id === selectedOption.id ? { ...option, active: false, soldReference: reference } : option) : options;
+      const productUpdate: Record<string, unknown> = { stock: product.stock - 1, updatedAt: FieldValue.serverTimestamp() };
+      if (singleSaleOption) {
+        productUpdate.options = nextOptions;
+        if (!nextOptions.some((option) => option?.active === true)) productUpdate.active = false;
+      }
+      transaction.update(productRef, productUpdate);
       transaction.set(walletRef, { userId: user.uid, balanceMinor: nextBalance, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       transaction.create(ledgerRef, { userId: user.uid, reference, amountMinor: -priceMinor, kind: "purchase", description: `Marketplace purchase: ${orderTitle}`, balanceAfterMinor: nextBalance, status: "successful", createdAt: FieldValue.serverTimestamp() });
       transaction.create(orderRef, order);

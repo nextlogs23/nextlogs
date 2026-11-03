@@ -31,7 +31,7 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
     try {
       const order = await api<Order>("/api/marketplace/orders", { method: "POST", body: JSON.stringify({ productId, optionId: option?.id, idempotencyKey: crypto.randomUUID() }) });
       setLastOrder(order); toast.success(order.status === "successful" ? "Purchase complete. Your product is ready." : "Order received for secure delivery.");
-      setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - 1) } : current);
+      setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - 1), options: option && current.category === "digital_products" ? current.options.filter((item) => item.id !== option.id) : current.options } : current);
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Purchase could not be completed"); }
     finally { setBuying(null); }
   }
