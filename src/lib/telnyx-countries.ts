@@ -1,11 +1,11 @@
 // Conservative two-way SMS number markets published by the provider.
 // Exact inventory is still checked live before a number is shown or sold.
 const countryCodes = [
-  "AU", "BR", "CA", "CL", "CZ", "DK", "FI", "MX", "NL", "PL", "RO", "ZA",
+  "AU", "BR", "CA", "CL", "CZ", "DE", "DK", "FI", "MX", "NL", "PL", "RO", "ZA",
   "SE", "TH", "GB", "US",
 ] as const;
 
-const pinned = ["US", "GB", "CA", "AU", "ZA", "MX", "NL"];
+const pinned = ["US", "GB", "CA", "DE", "AU", "ZA", "MX", "NL"];
 const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 function flagFor(code: string) {
