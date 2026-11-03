@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, BadgeCheck, Download, ExternalLink, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, Copy, Download, ExternalLink, FileText, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { downloadAuthenticatedFile } from "@/lib/authenticated-download";
@@ -10,7 +10,7 @@ import { ProductGeneratedIcon } from "@/components/marketplace/product-generated
 
 type ProductOption = { id: string; title: string; priceMinor: number; previewUrl: string | null; hasDownload: boolean; displayOrder: number };
 type Product = { id: string; title: string; description: string; category: string; kind: string; priceMinor: number; stock: number; featured: boolean; badge?: string | null; iconUrl?: string | null; previewBullets: string[]; hasDownload: boolean; hasOptions: boolean; options: ProductOption[]; fulfillment: "instant" | "manual" };
-type Order = { reference: string; title: string; priceMinor: number; status: string; downloadUrl?: string | null };
+type Order = { reference: string; title: string; priceMinor: number; status: string; deliveryText?: string | null; downloadUrl?: string | null };
 
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const categoryLabel = (category: string) => category === "social_assets" ? "Social media assets" : "Digital products";
@@ -44,6 +44,11 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
     finally { setDownloading(false); }
   }
 
+  async function copyDeliveryText(value: string) {
+    try { await navigator.clipboard.writeText(value); toast.success("Deliverable text copied."); }
+    catch { toast.error("Copy failed. Select the text and copy it manually."); }
+  }
+
   if (loading) return <div className="marketplace-detail-loading"><span /><div /><div /></div>;
   if (error || !product) return <section className="marketplace-detail-error"><span><PackageX size={25} /></span><h1>Product unavailable</h1><p>{error || "This product is not currently available."}</p><div><Link href="/dashboard/marketplace" className="ui-button-secondary"><ArrowLeft size={15} /> Back to marketplace</Link><button onClick={() => void load()} className="ui-button-primary"><RefreshCw size={15} /> Try again</button></div></section>;
 
@@ -63,5 +68,6 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
     </section>
 
     {lastOrder && <section className="marketplace-order-success"><span><BadgeCheck size={20} /></span><div><h3>{lastOrder.status === "successful" ? "Purchase completed" : "Order received"}</h3><p>{lastOrder.title} · {money(lastOrder.priceMinor)} · {lastOrder.reference}</p></div>{lastOrder.downloadUrl ? <button type="button" disabled={downloading} onClick={() => void downloadOrder(lastOrder)}>{downloading ? <LoaderCircle className="animate-spin" size={14} /> : <Download size={14} />} {downloading ? "Preparing..." : "Download file"}</button> : <Link href="/dashboard/marketplace#marketplace-orders">View purchases <ArrowRight size={14} /></Link>}</section>}
+    {lastOrder?.deliveryText && <section className="marketplace-deliverable"><header><span><FileText size={17} /></span><div><small>Private buyer deliverable</small><h3>Copy your purchased text</h3></div><button type="button" onClick={() => void copyDeliveryText(lastOrder.deliveryText!)}><Copy size={14} /> Copy text</button></header><pre>{lastOrder.deliveryText}</pre></section>}
   </div>;
 }

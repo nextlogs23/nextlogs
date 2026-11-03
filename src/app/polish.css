@@ -177,6 +177,25 @@ html.dark{
   --shadow:0 18px 48px rgba(0,0,0,.3);
 }
 
+/* Private text deliverables for marketplace options */
+.admin-option-deliverable{position:relative;grid-column:2/-1;display:grid;gap:7px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft);padding:12px;color:var(--muted);font-size:8px;font-weight:850}
+.admin-option-deliverable>span{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--ink)}
+.admin-option-deliverable small{color:var(--muted);font-size:7px;font-weight:650}
+.admin-option-deliverable textarea{min-height:110px;resize:vertical;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:10px;color:var(--ink);font:500 9px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;outline:0}
+.admin-option-deliverable textarea:focus{border-color:color-mix(in srgb,var(--brand) 48%,var(--line));box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 8%,transparent)}
+.admin-option-deliverable>i{justify-self:end;color:var(--muted);font-size:7px;font-style:normal;font-weight:700}
+.marketplace-access-group{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.marketplace-deliverable{margin-top:12px;border:1px solid color-mix(in srgb,var(--brand) 22%,var(--line));border-radius:15px;background:var(--surface);padding:15px;box-shadow:var(--shadow)}
+.marketplace-deliverable>header{display:flex;align-items:center;gap:10px}.marketplace-deliverable>header>span{display:grid;width:38px;height:38px;place-items:center;border-radius:11px;background:color-mix(in srgb,var(--brand) 10%,var(--surface));color:var(--brand)}
+.marketplace-deliverable>header>div{min-width:0;flex:1}.marketplace-deliverable small{color:var(--brand);font-size:7px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.marketplace-deliverable h3{margin-top:3px;font-size:11px;font-weight:900}
+.marketplace-deliverable button{display:inline-flex;min-height:36px;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;background:var(--surface-soft);padding:0 11px;color:var(--brand);font-size:8px;font-weight:900}
+.marketplace-deliverable pre,.marketplace-delivery-modal pre{max-height:320px;margin-top:12px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:11px;background:var(--surface-soft);padding:13px;color:var(--ink);font:500 10px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+.marketplace-delivery-modal{position:relative;width:min(94vw,620px);border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:24px;box-shadow:0 35px 100px rgba(2,20,37,.35);animation:modal-in .22s ease}
+.marketplace-delivery-modal>h2{margin-top:16px;padding-right:38px;font-size:20px;font-weight:900;letter-spacing:-.03em}.marketplace-delivery-modal>p:not(.ui-eyebrow){margin-top:7px;color:var(--muted);font-size:9px}.marketplace-delivery-modal>.ui-eyebrow{margin-top:17px}.marketplace-delivery-modal>.ui-button-primary{margin-top:14px}
+html.dark .admin-option-deliverable,html.dark .admin-option-deliverable textarea,html.dark .marketplace-deliverable,html.dark .marketplace-deliverable pre,html.dark .marketplace-delivery-modal,html.dark .marketplace-delivery-modal pre{border-color:#34495d;background:#111f2d}
+@media(max-width:900px){.admin-option-deliverable{grid-column:1/-1}}
+@media(max-width:620px){.admin-option-deliverable{grid-column:auto}.admin-option-deliverable>span{align-items:flex-start;flex-direction:column}.marketplace-deliverable>header{align-items:flex-start;flex-wrap:wrap}.marketplace-deliverable>header button{width:100%;justify-content:center}}
+
 /* Authenticated marketplace download controls */
 .marketplace-order-success>button{display:flex;align-items:center;gap:5px;font-size:8px;font-weight:900}
 .marketplace-order-success>button:disabled,.marketplace-access:disabled{cursor:wait;opacity:.65}

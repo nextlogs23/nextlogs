@@ -67,6 +67,23 @@ test("each product option can own a protected downloadable file", () => {
   assert.match(order, /selectedOption\?\.downloadFile/);
 });
 
+test("each option can securely deliver private copyable text to its buyer", () => {
+  const admin = read("src/app/api/admin/marketplace/route.ts");
+  const manager = read("src/components/admin/marketplace-manager.tsx");
+  const order = read("src/app/api/marketplace/orders/route.ts");
+  const helper = read("src/lib/server/marketplace.ts");
+  const details = read("src/components/dashboard/marketplace-product-details.tsx");
+  const workspace = read("src/components/dashboard/marketplace-workspace.tsx");
+  assert.match(admin, /deliveryText: z\.string\(\)\.trim\(\)\.max\(12000\)\.nullable\(\)\.default\(null\)/);
+  assert.match(manager, /Buyer deliverable text/);
+  assert.match(manager, /deliveryText: option\.deliveryText\.trim\(\) \|\| null/);
+  assert.match(order, /selectedOption\?\.deliveryText/);
+  assert.match(order, /fulfilled && typeof data\.deliveryText === "string"/);
+  assert.match(details, /Copy your purchased text/);
+  assert.match(workspace, /View text/);
+  assert.doesNotMatch(helper.slice(helper.indexOf("export function publicMarketplaceProduct")), /deliveryText/);
+});
+
 test("every marketplace product has a customer details route", () => {
   const details = read("src/components/dashboard/marketplace-product-details.tsx");
   const catalogue = read("src/components/dashboard/marketplace-workspace.tsx");
