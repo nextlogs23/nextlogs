@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, Download, ExternalLink, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { downloadAuthenticatedFile } from "@/lib/authenticated-download";
 import { ProductGeneratedIcon } from "@/components/marketplace/product-generated-icon";
 
 type ProductOption = { id: string; title: string; priceMinor: number; previewUrl: string | null; hasDownload: boolean; displayOrder: number };
@@ -20,6 +21,7 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [buying, setBuying] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const load = useCallback(async () => { setLoading(true); setError(""); try { const data = await api<{ product: Product }>(`/api/marketplace/products/${encodeURIComponent(productId)}`); setProduct(data.product); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to load this product"); } finally { setLoading(false); } }, [productId]);
   useEffect(() => { void load(); }, [load]);
@@ -32,6 +34,14 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
       setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - 1) } : current);
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Purchase could not be completed"); }
     finally { setBuying(null); }
+  }
+
+  async function downloadOrder(order: Order) {
+    if (!order.downloadUrl || downloading) return;
+    setDownloading(true);
+    try { await downloadAuthenticatedFile(order.downloadUrl, `${order.title}-download`); }
+    catch (cause) { toast.error(cause instanceof Error ? cause.message : "The purchased file could not be downloaded"); }
+    finally { setDownloading(false); }
   }
 
   if (loading) return <div className="marketplace-detail-loading"><span /><div /><div /></div>;
@@ -52,6 +62,6 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
       </article>)}</div> : product.hasOptions ? <div className="marketplace-options-empty"><PackageX size={21} /><div><h3>No active options</h3><p>The administrator has temporarily disabled every option for this product.</p></div></div> : <div className="marketplace-legacy-purchase"><div><small>Product price</small><strong>{money(product.priceMinor)}</strong><p>The server will verify the current price, stock, and wallet balance before processing.</p></div><button disabled={!canPurchase || buying !== null} onClick={() => void purchase()} className="ui-button-primary">{buying === "base" ? <LoaderCircle className="animate-spin" size={15} /> : <ShoppingBag size={15} />}{canPurchase ? "Purchase with wallet" : "Out of stock"}</button></div>}
     </section>
 
-    {lastOrder && <section className="marketplace-order-success"><span><BadgeCheck size={20} /></span><div><h3>{lastOrder.status === "successful" ? "Purchase completed" : "Order received"}</h3><p>{lastOrder.title} · {money(lastOrder.priceMinor)} · {lastOrder.reference}</p></div>{lastOrder.downloadUrl ? <a href={lastOrder.downloadUrl}><Download size={14} /> Download file</a> : <Link href="/dashboard/marketplace#marketplace-orders">View purchases <ArrowRight size={14} /></Link>}</section>}
+    {lastOrder && <section className="marketplace-order-success"><span><BadgeCheck size={20} /></span><div><h3>{lastOrder.status === "successful" ? "Purchase completed" : "Order received"}</h3><p>{lastOrder.title} · {money(lastOrder.priceMinor)} · {lastOrder.reference}</p></div>{lastOrder.downloadUrl ? <button type="button" disabled={downloading} onClick={() => void downloadOrder(lastOrder)}>{downloading ? <LoaderCircle className="animate-spin" size={14} /> : <Download size={14} />} {downloading ? "Preparing..." : "Download file"}</button> : <Link href="/dashboard/marketplace#marketplace-orders">View purchases <ArrowRight size={14} /></Link>}</section>}
   </div>;
 }

@@ -25,12 +25,11 @@ test("search requests exact SMS-capable inventory and the UI previews exact numb
   assert.match(workspace, /Purchase selected number/);
 });
 
-test("country selector exposes only published two-way SMS markets while inventory remains live-filtered", () => {
+test("country selector exposes only approved SMS markets while inventory remains live-filtered", () => {
   const countries = read("src/lib/telnyx-countries.ts");
   const workspace = read("src/components/dashboard/workspace.tsx");
-  for (const code of ["US", "GB", "CA", "DE", "AU", "BR", "CL", "CZ", "DK", "FI", "MX", "NL", "PL", "RO", "ZA", "SE", "TH"]) assert.match(countries, new RegExp(`"${code}"`));
-  assert.doesNotMatch(countries, /"NG"/);
-  assert.doesNotMatch(countries, /"FR"|"KE"/);
+  for (const code of ["US", "GB", "CA", "AU", "ZA", "NL", "FI", "SE"]) assert.match(countries, new RegExp(`"${code}"`));
+  assert.doesNotMatch(countries, /"BR"|"CL"|"CZ"|"DE"|"DK"|"FR"|"KE"|"MX"|"NG"|"PL"|"RO"|"TH"/);
   assert.match(workspace, /Only live SMS-capable inventory is shown/);
 });
 

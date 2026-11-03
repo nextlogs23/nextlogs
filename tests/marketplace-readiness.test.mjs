@@ -43,6 +43,20 @@ test("private product files require a completed owner order", () => {
   assert.match(order, /downloadUrl/);
 });
 
+test("customer downloads send Firebase authorization and preserve the uploaded file", () => {
+  const helper = read("src/lib/authenticated-download.ts");
+  const details = read("src/components/dashboard/marketplace-product-details.tsx");
+  const workspace = read("src/components/dashboard/marketplace-workspace.tsx");
+  assert.match(helper, /getIdToken/);
+  assert.match(helper, /Authorization: `Bearer \$\{token\}`/);
+  assert.match(helper, /Content-Disposition/);
+  assert.match(helper, /anchor\.download = fileName/);
+  assert.match(details, /downloadAuthenticatedFile/);
+  assert.match(workspace, /downloadAuthenticatedFile/);
+  assert.doesNotMatch(details, /<a href=\{lastOrder\.downloadUrl\}/);
+  assert.doesNotMatch(workspace, /<a href=\{order\.downloadUrl\}/);
+});
+
 test("each product option can own a protected downloadable file", () => {
   const admin = read("src/app/api/admin/marketplace/route.ts");
   const manager = read("src/components/admin/marketplace-manager.tsx");
@@ -116,6 +130,6 @@ test("Firestore rules and indexes protect marketplace records", () => {
 test("number marketplace reuses the existing provider-backed SMS flow", () => {
   const workspace = read("src/components/dashboard/marketplace-workspace.tsx");
   assert.match(workspace, /href="\/dashboard\/sms"/);
-  assert.match(workspace, /Telnyx inventory/);
-  assert.match(workspace, /SMSPool services/);
+  assert.match(workspace, /Preview exact live inventory/);
+  assert.match(workspace, /provider-assigned numbers/);
 });
