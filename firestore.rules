@@ -23,6 +23,7 @@ service cloud.firestore {
     match /wallets/{id} { allow read, write: if false; }
     match /walletTransactions/{id} { allow read, write: if false; }
     match /walletFundingIntents/{id} { allow read, write: if false; }
+    match /manualFundingRequests/{id} { allow read, write: if false; }
     match /transactions/{id} { allow read, write: if false; }
     match /smsOrders/{id} { allow read, write: if false; }
     match /telnyxSearchOffers/{id} { allow read, write: if false; }

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const db = adminDb();
     const existing = await db.collection("telnyxOrders").doc(reference).get();
     if (existing.exists) { const data = existing.data()!; return Response.json({ reference, number: data.phoneNumber, status: data.status, providerReference: data.providerReference || null, idempotent: true }); }
-    if (!telnyxPurchasesEnabled()) throw Object.assign(new Error("Live Telnyx purchases are disabled. Enable them only after completing sandbox and webhook tests."), { status: 503 });
+    if (!telnyxPurchasesEnabled()) throw Object.assign(new Error("Live virtual-number purchases are currently disabled."), { status: 503 });
     const profileId = telnyxMessagingProfileId();
     const client = telnyxClient();
     const offerSnapshot = await db.collection("telnyxSearchOffers").doc(body.offerId).get();
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       transaction.set(db.collection("purchasedNumbers").doc(reference), { userId: user.uid, orderReference: reference, providerReference: provider?.id || null, providerNumberId: number?.id || null, phoneNumber: offer.phoneNumber, countryCode: offer.countryCode, status, messagingProfileId: profileId, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     });
     if (status === "failed") {
-      await finalizePurchaseRefund({ uid: user.uid, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: retailPriceMinor, description: "Telnyx order failure refund", providerReference: provider?.id || reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed" });
+      await finalizePurchaseRefund({ uid: user.uid, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: retailPriceMinor, description: "Virtual-number order failure refund", providerReference: provider?.id || reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed" });
     }
     return Response.json({ reference, number: offer.phoneNumber, status, providerReference: provider?.id || null });
   } catch (error) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const status = (error as { status?: number }).status;
     const providerError = reserved ? normalizeTelnyxError(error) : status ? error as Error & { status?: number } : normalizeTelnyxError(error);
     if (reference && userId && retailPriceMinor && (providerError as Error & { outcomeKnown?: boolean }).outcomeKnown) {
-      await finalizePurchaseRefund({ uid: userId, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: retailPriceMinor, description: "Telnyx confirmed failure refund", providerReference: reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { failureReason: providerError.message } });
+      await finalizePurchaseRefund({ uid: userId, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: retailPriceMinor, description: "Virtual-number confirmed failure refund", providerReference: reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { failureReason: providerError.message } });
     }
     return routeError(providerError);
   }

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const live = (await telnyxClient().numberOrders.retrieve(order.providerReference)).data;
         status = live?.status === "success" ? "active" : live?.status === "failure" ? "failed" : "processing";
         if (status === "failed" && Number.isSafeInteger(order.retailPriceMinor) && order.retailPriceMinor > 0) {
-          await finalizePurchaseRefund({ uid: user.uid, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: order.retailPriceMinor, description: "Telnyx confirmed order failure refund", providerReference: order.providerReference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { providerStatus: live?.status || "failure" } });
+          await finalizePurchaseRefund({ uid: user.uid, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: order.retailPriceMinor, description: "Virtual-number confirmed order failure refund", providerReference: order.providerReference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { providerStatus: live?.status || "failure" } });
           await db.collection("purchasedNumbers").doc(reference).set({ status: "failed", updatedAt: FieldValue.serverTimestamp() }, { merge: true });
         } else {
           await Promise.all([

@@ -36,10 +36,22 @@ test("country selector exposes broad Telnyx coverage while inventory remains liv
 
 test("countries without live SMS inventory produce an empty search instead of a raw Telnyx error", () => {
   const provider = read("src/lib/server/telnyx.ts");
+  const workspace = read("src/components/dashboard/workspace.tsx");
   assert.match(provider, /isTelnyxNoCoverageError/);
   assert.match(provider, /String\(item\.code\) === "10015"/);
   assert.match(provider, /no coverage found/i);
   assert.match(provider, /return \{ data: \[\] \}/);
+  assert.match(workspace, /!unavailableCountries\.includes\(item\.code\)/);
+  assert.match(workspace, /was removed from the list/);
+});
+
+test("provider branding is not exposed in customer or admin interface copy", () => {
+  const customer = read("src/components/dashboard/workspace.tsx");
+  const marketplace = read("src/components/dashboard/marketplace-workspace.tsx");
+  const admin = read("src/components/admin/admin-workspace.tsx");
+  assert.doesNotMatch(customer, /Telnyx coverage|Telnyx currently|Telnyx could|Telnyx purchases/i);
+  assert.doesNotMatch(marketplace, /Telnyx/i);
+  assert.doesNotMatch(admin, /Telnyx authentication|Telnyx connected|Unable to (?:load|test) Telnyx|Loading Telnyx|No Telnyx orders|Monitor Telnyx|<span>Telnyx/i);
 });
 
 test("admin health check performs read-only authentication, inventory and profile checks", () => {

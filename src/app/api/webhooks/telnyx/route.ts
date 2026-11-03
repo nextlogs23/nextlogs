@@ -13,10 +13,10 @@ export async function POST(request: Request) {
     const verified = await telnyxClient({ webhook: true }).webhooks.unwrap(rawBody, { headers: Object.fromEntries(request.headers.entries()) });
     event = verified as unknown as TelnyxEvent;
   } catch {
-    return Response.json({ error: "Invalid Telnyx webhook signature" }, { status: 401 });
+    return Response.json({ error: "Invalid SMS-provider webhook signature" }, { status: 401 });
   }
   const data = event.data; const eventId = data?.id; const eventType = data?.event_type;
-  if (!eventId || !eventType) return Response.json({ error: "Invalid Telnyx webhook payload" }, { status: 400 });
+  if (!eventId || !eventType) return Response.json({ error: "Invalid SMS-provider webhook payload" }, { status: 400 });
   const db = adminDb(); const eventRef = db.collection("telnyxWebhookEvents").doc(eventId);
   if ((await eventRef.get()).exists) return Response.json({ received: true, duplicate: true });
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     if (reference) {
       const orderSnapshot = await db.collection("telnyxOrders").doc(reference).get(); const order = orderSnapshot.data();
       if (status === "failed" && order?.userId && Number.isSafeInteger(order.retailPriceMinor) && order.retailPriceMinor > 0) {
-        await finalizePurchaseRefund({ uid: order.userId, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: order.retailPriceMinor, description: "Telnyx order failure refund", providerReference: textValue(payload.id) || reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { providerStatus } });
+        await finalizePurchaseRefund({ uid: order.userId, purchaseReference: reference, refundReference: `${reference}-REFUND`, amountMinor: order.retailPriceMinor, description: "Virtual-number order failure refund", providerReference: textValue(payload.id) || reference, providerOrderCollection: "telnyxOrders", providerOrderStatus: "failed", providerOrderUpdates: { providerStatus } });
       }
       await Promise.all([
         db.collection("telnyxOrders").doc(reference).set({ status, providerStatus, updatedAt: FieldValue.serverTimestamp() }, { merge: true }),

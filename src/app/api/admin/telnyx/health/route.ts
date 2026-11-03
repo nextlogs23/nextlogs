@@ -12,15 +12,15 @@ export async function GET(request: NextRequest) {
       pricingRateConfigured: Boolean(process.env.TELNYX_USD_NGN_RATE?.trim()),
       purchasesEnabled: process.env.TELNYX_PURCHASES_ENABLED === "true",
     };
-    if (request.nextUrl.searchParams.get("live") !== "1") return Response.json({ provider: "Telnyx", ...configuration });
-    if (!configuration.apiKeyConfigured) return Response.json({ provider: "Telnyx", ...configuration, connection: "not_configured", inventorySearch: "not_tested" });
+    if (request.nextUrl.searchParams.get("live") !== "1") return Response.json({ provider: "Virtual numbers", ...configuration });
+    if (!configuration.apiKeyConfigured) return Response.json({ provider: "Virtual numbers", ...configuration, connection: "not_configured", inventorySearch: "not_tested" });
 
     const client = telnyxClient();
     try {
       await client.balance.retrieve();
     } catch (error) {
       const normalized = normalizeTelnyxError(error);
-      return Response.json({ provider: "Telnyx", ...configuration, connection: "failed", inventorySearch: "not_tested", error: normalized.message });
+      return Response.json({ provider: "Virtual numbers", ...configuration, connection: "failed", inventorySearch: "not_tested", error: normalized.message });
     }
 
     let inventorySearch: "available" | "empty" | "failed" = "failed";
@@ -41,6 +41,6 @@ export async function GET(request: NextRequest) {
         messagingProfile = "failed";
       }
     }
-    return Response.json({ provider: "Telnyx", ...configuration, connection: "connected", inventorySearch, inventoryError, messagingProfile });
+    return Response.json({ provider: "Virtual numbers", ...configuration, connection: "connected", inventorySearch, inventoryError, messagingProfile });
   } catch (error) { return routeError(error); }
 }

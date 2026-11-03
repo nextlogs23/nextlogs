@@ -49,7 +49,7 @@ function dollarsToNairaMinor(value: string | undefined) {
   const amount = Number.parseFloat(value || "0");
   const rate = Number.parseFloat(required("TELNYX_USD_NGN_RATE"));
   if (!Number.isFinite(amount) || amount < 0 || !Number.isFinite(rate) || rate <= 0) {
-    throw Object.assign(new Error("Telnyx pricing conversion is not configured correctly"), { status: 503 });
+    throw Object.assign(new Error("Number pricing conversion is not configured correctly"), { status: 503 });
   }
   return Math.round(amount * rate * 100);
 }
@@ -75,7 +75,7 @@ export async function searchTelnyxNumbers(countryCode: string, limit = 20): Prom
   })();
   const markup = Number.parseFloat(process.env.TELNYX_NUMBER_MARKUP_PERCENT || "20");
   if (!Number.isFinite(markup) || markup < 0 || markup > 500) {
-    throw Object.assign(new Error("TELNYX_NUMBER_MARKUP_PERCENT is invalid"), { status: 503 });
+    throw Object.assign(new Error("Virtual-number pricing markup is configured incorrectly"), { status: 503 });
   }
   return (response.data || []).flatMap((item) => {
     if (!item.phone_number) return [];
@@ -129,7 +129,7 @@ export function normalizeTelnyxError(error: unknown) {
   const status = providerStatus === 404 || providerStatus === 409 || providerStatus === 422 ? 409 : providerStatus === 401 || providerStatus === 403 ? 503 : 502;
   const message = status === 409
     ? "The selected number is no longer available. Search again and choose another number."
-    : "Telnyx could not complete this request. Please try again later.";
+    : "The SMS number provider could not complete this request. Please try again later.";
   return Object.assign(new Error(message), {
     status,
     providerStatus,
