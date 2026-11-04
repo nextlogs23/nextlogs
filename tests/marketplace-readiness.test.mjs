@@ -111,6 +111,17 @@ test("every marketplace product has a customer details route", () => {
   assert.match(details, /optionId: option\?\.id/);
 });
 
+test("customer marketplace uses the compact responsive listing structure", () => {
+  const workspace = read("src/components/dashboard/marketplace-workspace.tsx");
+  const styles = read("src/app/polish.css");
+  assert.match(workspace, /marketplace-storefront/);
+  assert.match(workspace, /marketplace-listing-grid/);
+  assert.match(workspace, /marketplace-listing-card/);
+  assert.match(workspace, /marketplace-listing-footer/);
+  assert.match(styles, /marketplace-listing-grid\{display:grid;grid-template-columns:repeat\(4/);
+  assert.match(styles, /@media\(max-width:620px\).*marketplace-listing-grid\{grid-template-columns:repeat\(2/);
+});
+
 test("catalog responses expose neither delivery URLs nor retired product links", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const publicProjection = helper.slice(helper.indexOf("export function publicMarketplaceProduct"));
