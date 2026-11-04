@@ -4,11 +4,12 @@ export const marketplaceCategories = ["social_assets", "digital_products"] as co
 export const marketplaceKinds = ["download", "template", "subscription", "service"] as const;
 export const marketplaceFulfillment = ["instant", "manual"] as const;
 
-const prohibitedProductLanguage = /\b(aged\s+accounts?|verified\s+accounts?|account\s+logins?|passwords?|session\s+tokens?|cookies?|followers?|likes?|engagement\s+bots?|verification\s+bypass|kyc\s+bypass|stolen|hacked)\b/i;
+const prohibitedCredentialLanguage = /\b(aged\s+accounts?|verified\s+accounts?|account\s+logins?|passwords?|session\s+tokens?|browser\s+cookies?|verification\s+bypass|kyc\s+bypass|stolen\s+(?:accounts?|credentials?|data)|hacked\s+(?:accounts?|credentials?|data))\b/i;
+const prohibitedEngagementLanguage = /\b(?:buy|sell|purchase|instant|guaranteed|cheap|bulk|bot|fake)\s+(?:social\s+media\s+)?(?:followers?|likes?|views?|engagement)|\b(?:followers?|likes?|views?|engagement)\s+(?:packages?|bots?|for\s+sale)\b|\b\d[\d,.]*\+?\s+(?:followers?|likes?|views?)\b/i;
 
 export function assertPermittedMarketplaceProduct(...values: string[]) {
-  if (values.some((value) => prohibitedProductLanguage.test(value))) {
-    throw Object.assign(new Error("This product type is not permitted in the marketplace"), { status: 400 });
+  if (values.some((value) => prohibitedCredentialLanguage.test(value) || prohibitedEngagementLanguage.test(value))) {
+    throw Object.assign(new Error("Review this listing before saving. Account credentials, verification bypass tools, bots, and engagement-for-sale products are not supported."), { status: 400, code: "MARKETPLACE_PRODUCT_RESTRICTED" });
   }
 }
 

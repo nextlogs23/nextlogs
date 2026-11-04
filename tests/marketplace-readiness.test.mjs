@@ -160,10 +160,17 @@ test("customer order history works before the composite index finishes deploying
 test("prohibited credential and fake-engagement products are rejected", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const admin = read("src/app/api/admin/marketplace/route.ts");
+  const manager = read("src/components/admin/marketplace-manager.tsx");
   assert.match(helper, /account\\s\+logins/);
   assert.match(helper, /followers/);
   assert.match(helper, /verification\\s\+bypass/);
+  assert.match(helper, /prohibitedCredentialLanguage/);
+  assert.match(helper, /prohibitedEngagementLanguage/);
+  assert.match(helper, /engagement-for-sale products are not supported/);
   assert.match(admin, /assertPermittedMarketplaceProduct/);
+  assert.match(manager, /admin-market-form-error/);
+  assert.match(manager, /setFormError/);
+  assert.match(manager, /setEditError/);
 });
 
 test("Firestore rules and indexes protect marketplace records", () => {
