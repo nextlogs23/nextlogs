@@ -157,6 +157,17 @@ test("customer order history works before the composite index finishes deploying
   assert.match(customerRead, /\.sort\(/);
 });
 
+test("admin marketplace orders use a responsive management layout", () => {
+  const manager = read("src/components/admin/marketplace-manager.tsx");
+  const styles = read("src/app/polish.css");
+  assert.match(manager, /admin-market-orders-list/);
+  assert.match(manager, /admin-market-order-row/);
+  assert.match(manager, /shortId\(order\.reference\)/);
+  assert.match(manager, /statusTone\(order\.status\)/);
+  assert.match(styles, /admin-market-order-state \.is-success/);
+  assert.match(styles, /@media\(max-width:700px\).*admin-market-orders-list/);
+});
+
 test("prohibited credential and fake-engagement products are rejected", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const admin = read("src/app/api/admin/marketplace/route.ts");
