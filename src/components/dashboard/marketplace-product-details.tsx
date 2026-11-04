@@ -32,7 +32,7 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
     try {
       const order = await api<Order>("/api/marketplace/orders", { method: "POST", body: JSON.stringify({ productId, optionId: option?.id, idempotencyKey: crypto.randomUUID() }) });
       setLastOrder(order); toast.success(order.status === "successful" ? "Purchase complete. Your product is ready." : "Order received for secure delivery.");
-      setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - 1), options: option && current.category === "digital_products" ? current.options.filter((item) => item.id !== option.id) : current.options } : current);
+      setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - 1), options: option ? current.options.filter((item) => item.id !== option.id) : current.options } : current);
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Purchase could not be completed"); }
     finally { setBuying(null); }
   }
@@ -58,7 +58,7 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
     <Link href="/dashboard/marketplace" className="marketplace-detail-back"><ArrowLeft size={14} /> Back to marketplace</Link>
     <section className="marketplace-detail-hero">
       <div className="marketplace-detail-art"><span><ProductGeneratedIcon id={product.id} title={product.title} category={product.category} kind={product.kind} iconUrl={product.iconUrl} /></span>{product.badge && <b>{product.badge}</b>}</div>
-      <div className="marketplace-detail-copy"><p className="ui-eyebrow">{categoryLabel(product.category)} · {product.kind}</p><h1>{product.title}</h1><p>{product.description}</p><div className="marketplace-detail-meta"><span><BadgeCheck size={14} /> Administrator approved</span><span>{product.stock} available</span><span>{product.hasDownload ? <><Download size={14} /> Download after purchase</> : product.fulfillment === "instant" ? "Instant access" : "Managed delivery"}</span></div>{product.previewBullets.length ? <div className="marketplace-detail-points">{product.previewBullets.map((item) => <span key={item}><BadgeCheck size={14} /> {item}</span>)}</div> : null}</div>
+      <div className="marketplace-detail-copy"><p className="ui-eyebrow">{categoryLabel(product.category)} · {product.kind}</p><h1>{product.title}</h1><p>{product.description}</p><div className="marketplace-detail-meta"><span><BadgeCheck size={14} /> Administrator approved</span><span className={`marketplace-detail-stock ${product.stock <= 5 ? "is-low" : ""}`}><strong>{product.stock}</strong> available</span><span>{product.hasDownload ? <><Download size={14} /> Download after purchase</> : product.fulfillment === "instant" ? "Instant access" : "Managed delivery"}</span></div>{product.previewBullets.length ? <div className="marketplace-detail-points">{product.previewBullets.map((item) => <span key={item}><BadgeCheck size={14} /> {item}</span>)}</div> : null}</div>
     </section>
 
     <section className="marketplace-detail-options"><header><div><p className="ui-eyebrow">Available choices</p><h2>{product.hasOptions ? "Choose a product option" : "Purchase this product"}</h2><p>{product.hasOptions ? "Compare active options and choose the purchase path that suits you." : "This product uses the original NextLogs wallet checkout."}</p></div><span><ShieldCheck size={16} /> Server-validated pricing</span></header>

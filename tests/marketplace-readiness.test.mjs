@@ -114,10 +114,10 @@ test("purchases atomically validate stock and wallet balance", () => {
   assert.match(route, /transaction\.create\(transactionRef/);
 });
 
-test("sold digital-product options disappear atomically after purchase", () => {
+test("every sold sublink option disappears atomically after purchase", () => {
   const route = read("src/app/api/marketplace/orders/route.ts");
   const details = read("src/components/dashboard/marketplace-product-details.tsx");
-  assert.match(route, /product\.category === "digital_products" && Boolean\(selectedOption\)/);
+  assert.match(route, /const singleSaleOption = Boolean\(selectedOption\)/);
   assert.match(route, /active: false, soldReference: reference/);
   assert.match(route, /productUpdate\.options = nextOptions/);
   assert.match(route, /productUpdate\.active = false/);

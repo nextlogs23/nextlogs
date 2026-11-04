@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       const optionTitle = selectedOption?.title || null;
       const orderTitle = optionTitle ? `${product.title} — ${optionTitle}` : product.title;
       const order = { reference, userId: user.uid, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, providerCostMinor: product.providerCostMinor ?? null, fulfillment: product.fulfillment, deliveryUrl: instant && !downloadFile && !deliveryText ? product.deliveryUrl : null, deliveryText, downloadFile, status, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
-      const singleSaleOption = product.category === "digital_products" && Boolean(selectedOption);
+      const singleSaleOption = Boolean(selectedOption);
       const nextOptions = singleSaleOption ? options.map((option) => option?.id === selectedOption.id ? { ...option, active: false, soldReference: reference } : option) : options;
       const productUpdate: Record<string, unknown> = { stock: product.stock - 1, updatedAt: FieldValue.serverTimestamp() };
       if (singleSaleOption) {

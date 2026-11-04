@@ -31,7 +31,7 @@ export function MarketplaceWorkspace() {
     {loading ? <div className="marketplace-grid">{[1, 2, 3, 4].map((item) => <div key={item} className="marketplace-card marketplace-skeleton" />)}</div> : visible.length ? <div className="marketplace-grid">{visible.map((product, index) => {
       const optionPrices = product.options.map((option) => option.priceMinor);
       const displayPrice = optionPrices.length ? Math.min(...optionPrices) : product.priceMinor;
-      const availability = product.stock === 0 ? "Out of stock" : product.stock <= 5 ? `Only ${product.stock} left` : `${product.stock} available`;
+      const availability = product.stock === 0 ? "Out of stock" : `${product.stock} available`;
       return <article className={`marketplace-card marketplace-product-preview ${product.featured ? "is-featured" : ""}`} key={product.id}>
         <Link href={`/dashboard/marketplace/${product.id}`} className={`marketplace-card-art tone-${index % 4}`}>
           <span><ProductGeneratedIcon id={product.id} title={product.title} category={product.category} kind={product.kind} iconUrl={product.iconUrl} /></span>
@@ -43,7 +43,7 @@ export function MarketplaceWorkspace() {
           <Link href={`/dashboard/marketplace/${product.id}`} className="marketplace-card-title-link"><h3>{product.title}</h3></Link>
           <p>{product.description}</p>
           {product.previewBullets.length ? <div className="marketplace-card-points">{product.previewBullets.slice(0, 2).map((point) => <span key={point}><BadgeCheck size={12} /> {point}</span>)}</div> : null}
-          <div className="marketplace-card-price"><div><small>{product.hasOptions ? "Starting from" : "Price"}</small><strong>{product.hasOptions && !optionPrices.length ? "Unavailable" : money(displayPrice)}</strong></div><span className={product.stock <= 5 ? "is-low" : ""}><i /> {availability}</span></div>
+          <div className="marketplace-card-price"><div><small>{product.hasOptions ? "Starting from" : "Price"}</small><strong>{product.hasOptions && !optionPrices.length ? "Unavailable" : money(displayPrice)}</strong></div><span className={`marketplace-stock-pill ${product.stock <= 5 ? "is-low" : ""}`}><i /> {availability}</span></div>
           <div className="marketplace-card-actions"><Link href={`/dashboard/marketplace/${product.id}`}><Eye size={15} /> Preview</Link>{product.hasOptions ? <Link href={`/dashboard/marketplace/${product.id}`}>Choose option <ChevronRight size={14} /></Link> : <button disabled={!product.stock} onClick={() => setConfirm(product)}>Buy now <ChevronRight size={14} /></button>}</div>
         </div>
       </article>;
