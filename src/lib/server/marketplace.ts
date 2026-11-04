@@ -36,9 +36,9 @@ export function publicMarketplaceProduct(id: string, data: Record<string, unknow
       const option = item as { id?: unknown; title?: unknown; priceMinor?: unknown; previewUrl?: unknown; purchaseUrl?: unknown; downloadFile?: unknown; displayOrder?: unknown; active?: unknown };
       if (option.active !== true || typeof option.id !== "string" || typeof option.title !== "string" || typeof option.priceMinor !== "number" || !Number.isSafeInteger(option.priceMinor) || option.priceMinor < 100) return [];
       const candidateUrl = typeof option.previewUrl === "string" ? option.previewUrl : option.purchaseUrl;
-      const previewUrl = typeof candidateUrl === "string" && /^https?:\/\//i.test(candidateUrl) ? candidateUrl : null;
+      const hasPreview = typeof candidateUrl === "string" && /^https?:\/\//i.test(candidateUrl);
       const hasDownload = Boolean(option.downloadFile && typeof option.downloadFile === "object" && typeof (option.downloadFile as { pathname?: unknown }).pathname === "string");
-      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), previewUrl, hasDownload, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
+      return [{ id: option.id, title: option.title, priceMinor: Number(option.priceMinor), hasPreview, hasDownload, displayOrder: Number.isSafeInteger(option.displayOrder) ? Number(option.displayOrder) : 0 }];
     }).sort((a, b) => a.displayOrder - b.displayOrder || a.title.localeCompare(b.title)).slice(0, 100) : [],
     fulfillment: data.fulfillment,
   };

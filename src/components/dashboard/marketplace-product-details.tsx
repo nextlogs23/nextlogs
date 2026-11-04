@@ -8,19 +8,19 @@ import { api } from "@/lib/api-client";
 import { downloadAuthenticatedFile } from "@/lib/authenticated-download";
 import { ProductGeneratedIcon } from "@/components/marketplace/product-generated-icon";
 
-type ProductOption = { id: string; title: string; priceMinor: number; previewUrl: string | null; hasDownload: boolean; displayOrder: number };
+type ProductOption = { id: string; title: string; priceMinor: number; hasPreview: boolean; hasDownload: boolean; displayOrder: number };
 type Product = { id: string; title: string; description: string; category: string; kind: string; priceMinor: number; stock: number; featured: boolean; badge?: string | null; iconUrl?: string | null; previewBullets: string[]; hasDownload: boolean; hasOptions: boolean; options: ProductOption[]; fulfillment: "instant" | "manual" };
 type Order = { reference: string; title: string; priceMinor: number; status: string; deliveryText?: string | null; downloadUrl?: string | null };
 
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const categoryLabel = (category: string) => category === "social_assets" ? "Social media assets" : "Digital products";
-function hostname(url: string) { try { return new URL(url).hostname; } catch { return url; } }
 
 export function MarketplaceProductDetails({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [buying, setBuying] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
@@ -45,6 +45,23 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
     finally { setDownloading(false); }
   }
 
+  async function openPreview(option: ProductOption) {
+    if (!option.hasPreview || previewing) return;
+    const previewWindow = window.open("about:blank", "_blank");
+    if (previewWindow) previewWindow.opener = null;
+    setPreviewing(option.id);
+    try {
+      const data = await api<{ previewUrl: string }>(`/api/marketplace/products/${encodeURIComponent(productId)}/options/${encodeURIComponent(option.id)}/preview`);
+      if (!previewWindow) throw new Error("Your browser blocked the preview window. Allow pop-ups and try again.");
+      previewWindow.location.replace(data.previewUrl);
+    } catch (cause) {
+      previewWindow?.close();
+      toast.error(cause instanceof Error ? cause.message : "This preview is no longer available");
+    } finally {
+      setPreviewing(null);
+    }
+  }
+
   async function copyDeliveryText(value: string) {
     try { await navigator.clipboard.writeText(value); toast.success("Deliverable text copied."); }
     catch { toast.error("Copy failed. Select the text and copy it manually."); }
@@ -63,8 +80,8 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
 
     <section className="marketplace-detail-options"><header><div><p className="ui-eyebrow">Available choices</p><h2>{product.hasOptions ? "Choose a product option" : "Purchase this product"}</h2><p>{product.hasOptions ? "Compare active options and choose the purchase path that suits you." : "This product uses the original NextLogs wallet checkout."}</p></div><span><ShieldCheck size={16} /> Server-validated pricing</span></header>
       {product.options.length ? <div className="marketplace-option-grid">{product.options.map((option, index) => <article key={option.id}>
-        <div className="marketplace-option-number">{String(index + 1).padStart(2, "0")}</div><div className="marketplace-option-copy"><small>{option.hasDownload ? "Private file included" : "NextLogs wallet purchase"}</small><h3>{option.title}</h3><strong>{money(option.priceMinor)}</strong><p>{option.previewUrl ? `Preview this option on ${hostname(option.previewUrl)}, then return to purchase securely with your NextLogs wallet.` : option.hasDownload ? "Your protected file becomes available immediately after the wallet purchase succeeds." : "Price and availability are rechecked on the server before your wallet is charged."}</p></div>
-        <div className="marketplace-option-actions">{option.previewUrl ? <a href={option.previewUrl} target="_blank" rel="noopener noreferrer" className="marketplace-option-preview">Preview link <ExternalLink size={14} /></a> : <span className="marketplace-option-no-preview">No preview available</span>}<button disabled={!canPurchase || buying !== null} onClick={() => void purchase(option)} className="marketplace-option-action">{buying === option.id ? <LoaderCircle className="animate-spin" size={14} /> : <ShoppingBag size={14} />}{canPurchase ? "Buy now" : "Out of stock"}</button></div>
+        <div className="marketplace-option-number">{String(index + 1).padStart(2, "0")}</div><div className="marketplace-option-copy"><small>{option.hasDownload ? "Private file included" : "NextLogs wallet purchase"}</small><h3>{option.title}</h3><strong>{money(option.priceMinor)}</strong><p>{option.hasPreview ? "Open the protected preview, then return to purchase securely with your NextLogs wallet." : option.hasDownload ? "Your protected file becomes available immediately after the wallet purchase succeeds." : "Price and availability are rechecked on the server before your wallet is charged."}</p></div>
+        <div className="marketplace-option-actions">{option.hasPreview ? <button type="button" disabled={previewing !== null || buying !== null} onClick={() => void openPreview(option)} className="marketplace-option-preview">{previewing === option.id ? <LoaderCircle className="animate-spin" size={14} /> : <ExternalLink size={14} />} {previewing === option.id ? "Checking..." : "Preview link"}</button> : <span className="marketplace-option-no-preview">No preview available</span>}<button disabled={!canPurchase || buying !== null || previewing !== null} onClick={() => void purchase(option)} className="marketplace-option-action">{buying === option.id ? <LoaderCircle className="animate-spin" size={14} /> : <ShoppingBag size={14} />}{canPurchase ? "Buy now" : "Out of stock"}</button></div>
       </article>)}</div> : product.hasOptions ? <div className="marketplace-options-empty"><PackageX size={21} /><div><h3>No active options</h3><p>The administrator has temporarily disabled every option for this product.</p></div></div> : <div className="marketplace-legacy-purchase"><div><small>Product price</small><strong>{money(product.priceMinor)}</strong><p>The server will verify the current price, stock, and wallet balance before processing.</p></div><button disabled={!canPurchase || buying !== null} onClick={() => void purchase()} className="ui-button-primary">{buying === "base" ? <LoaderCircle className="animate-spin" size={15} /> : <ShoppingBag size={15} />}{canPurchase ? "Purchase with wallet" : "Out of stock"}</button></div>}
     </section>
 

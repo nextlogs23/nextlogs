@@ -7,8 +7,21 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 test("marketplace customer and admin routes require authenticated principals", () => {
   assert.match(read("src/app/api/marketplace/products/route.ts"), /requireUser/);
   assert.match(read("src/app/api/marketplace/products/[id]/route.ts"), /requireUser/);
+  assert.match(read("src/app/api/marketplace/products/[id]/options/[optionId]/preview/route.ts"), /requireUser/);
   assert.match(read("src/app/api/marketplace/orders/route.ts"), /requireUser/);
   assert.match(read("src/app/api/admin/marketplace/route.ts"), /requireAdmin/);
+});
+
+test("sold or disabled sublink previews are rejected server-side", () => {
+  const preview = read("src/app/api/marketplace/products/[id]/options/[optionId]/preview/route.ts");
+  const helper = read("src/lib/server/marketplace.ts");
+  const details = read("src/components/dashboard/marketplace-product-details.tsx");
+  assert.match(preview, /value\.active === true/);
+  assert.match(preview, /product option was sold or disabled/);
+  assert.match(preview, /Cache-Control.*private, no-store/);
+  assert.match(helper, /hasPreview/);
+  assert.match(details, /openPreview\(option\)/);
+  assert.match(details, /\/preview`/);
 });
 
 test("product options use preview links, are ordered, and expose only active public records", () => {
@@ -91,7 +104,8 @@ test("every marketplace product has a customer details route", () => {
   const catalogue = read("src/components/dashboard/marketplace-workspace.tsx");
   assert.match(catalogue, /dashboard\/marketplace\/\$\{product\.id\}/);
   assert.match(details, /product\.options\.map/);
-  assert.match(details, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(details, /window\.open\("about:blank", "_blank"\)/);
+  assert.match(details, /openPreview\(option\)/);
   assert.match(details, /optionId: option\?\.id/);
 });
 
