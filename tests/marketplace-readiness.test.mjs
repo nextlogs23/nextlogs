@@ -22,6 +22,8 @@ test("sold or disabled sublink previews are rejected server-side", () => {
   assert.match(helper, /hasPreview/);
   assert.match(details, /openPreview\(option\)/);
   assert.match(details, /\/preview`/);
+  assert.match(details, /canPurchase && option\.hasPreview/);
+  assert.match(details, /This option has been sold and is no longer available/);
 });
 
 test("product options use preview links, are ordered, and expose only active public records", () => {
