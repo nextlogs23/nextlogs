@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, BadgeCheck, Copy, Download, ExternalLink, FileText, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, Copy, Download, ExternalLink, FileText, LoaderCircle, PackageX, RefreshCw, ShieldCheck, ShoppingBag, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { downloadAuthenticatedFile } from "@/lib/authenticated-download";
@@ -23,6 +23,7 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
   const [buying, setBuying] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
   const load = useCallback(async () => { setLoading(true); setError(""); try { const data = await api<{ product: Product }>(`/api/marketplace/products/${encodeURIComponent(productId)}`); setProduct(data.product); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to load this product"); } finally { setLoading(false); } }, [productId]);
   useEffect(() => { void load(); }, [load]);
 
@@ -67,7 +68,7 @@ export function MarketplaceProductDetails({ productId }: { productId: string }) 
       </article>)}</div> : product.hasOptions ? <div className="marketplace-options-empty"><PackageX size={21} /><div><h3>No active options</h3><p>The administrator has temporarily disabled every option for this product.</p></div></div> : <div className="marketplace-legacy-purchase"><div><small>Product price</small><strong>{money(product.priceMinor)}</strong><p>The server will verify the current price, stock, and wallet balance before processing.</p></div><button disabled={!canPurchase || buying !== null} onClick={() => void purchase()} className="ui-button-primary">{buying === "base" ? <LoaderCircle className="animate-spin" size={15} /> : <ShoppingBag size={15} />}{canPurchase ? "Purchase with wallet" : "Out of stock"}</button></div>}
     </section>
 
-    {lastOrder && <section className="marketplace-order-success"><span><BadgeCheck size={20} /></span><div><h3>{lastOrder.status === "successful" ? "Purchase completed" : "Order received"}</h3><p>{lastOrder.title} · {money(lastOrder.priceMinor)} · {lastOrder.reference}</p></div>{lastOrder.downloadUrl ? <button type="button" disabled={downloading} onClick={() => void downloadOrder(lastOrder)}>{downloading ? <LoaderCircle className="animate-spin" size={14} /> : <Download size={14} />} {downloading ? "Preparing..." : "Download file"}</button> : <Link href="/dashboard/marketplace#marketplace-orders">View purchases <ArrowRight size={14} /></Link>}</section>}
-    {lastOrder?.deliveryText && <section className="marketplace-deliverable"><header><span><FileText size={17} /></span><div><small>Private buyer deliverable</small><h3>Copy your purchased text</h3></div><button type="button" onClick={() => void copyDeliveryText(lastOrder.deliveryText!)}><Copy size={14} /> Copy text</button></header><pre>{lastOrder.deliveryText}</pre></section>}
+    {lastOrder && <section className="marketplace-order-success"><span><BadgeCheck size={20} /></span><div><h3>{lastOrder.status === "successful" ? "Purchase completed" : "Order received"}</h3><p>{lastOrder.title} · {money(lastOrder.priceMinor)} · {lastOrder.reference}</p></div><div className="marketplace-order-actions">{lastOrder.downloadUrl && <button type="button" disabled={downloading} onClick={() => void downloadOrder(lastOrder)}>{downloading ? <LoaderCircle className="animate-spin" size={14} /> : <Download size={14} />} {downloading ? "Preparing..." : "Download file"}</button>}{lastOrder.deliveryText && <button type="button" onClick={() => setDeliveryOpen(true)}><FileText size={14} /> View text</button>}<Link href="/dashboard/marketplace#marketplace-orders">View purchases <ArrowRight size={14} /></Link></div></section>}
+    {deliveryOpen && lastOrder?.deliveryText && <div className="marketplace-delivery-layer" role="dialog" aria-modal="true" aria-labelledby="purchased-deliverable-title"><button type="button" className="marketplace-delivery-scrim" onClick={() => setDeliveryOpen(false)} aria-label="Close deliverable" /><section className="marketplace-delivery-modal"><button type="button" className="marketplace-modal-close" onClick={() => setDeliveryOpen(false)} aria-label="Close deliverable"><X size={17} /></button><span className="marketplace-checkout-icon"><FileText size={23} /></span><p className="ui-eyebrow">Private buyer deliverable</p><h2 id="purchased-deliverable-title">{lastOrder.title}</h2><p>This content belongs to your completed purchase. Keep it secure.</p><div className="marketplace-delivery-copybar"><span>Purchased text</span><button type="button" onClick={() => void copyDeliveryText(lastOrder.deliveryText!)}><Copy size={15} /> Copy all</button></div><pre>{lastOrder.deliveryText}</pre><button type="button" className="ui-button-primary w-full" onClick={() => void copyDeliveryText(lastOrder.deliveryText!)}><Copy size={15} /> Copy text</button></section></div>}
   </div>;
 }

@@ -79,8 +79,10 @@ test("each option can securely deliver private copyable text to its buyer", () =
   assert.match(manager, /deliveryText: option\.deliveryText\.trim\(\) \|\| null/);
   assert.match(order, /selectedOption\?\.deliveryText/);
   assert.match(order, /fulfilled && typeof data\.deliveryText === "string"/);
-  assert.match(details, /Copy your purchased text/);
+  assert.match(details, /marketplace-delivery-layer/);
+  assert.match(details, /Copy all/);
   assert.match(workspace, /View text/);
+  assert.match(workspace, /marketplace-delivery-layer/);
   assert.doesNotMatch(helper.slice(helper.indexOf("export function publicMarketplaceProduct")), /deliveryText/);
 });
 
