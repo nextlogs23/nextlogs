@@ -11,7 +11,7 @@ type BloomEnvelope<T> = {
   errors?: { code?: string; message?: string } | null;
 };
 
-export type BloomCountry = { id: string; name: string; shortName: string; region: string };
+export type BloomCountry = { id: string; name: string; shortName: string; countryCode: string | null; region: string };
 export type BloomService = { id: string; name: string };
 export type BloomOffer = {
   countryId: string;
@@ -105,6 +105,40 @@ function daysFromPeriod(period: string) {
   return match ? Number(match[1]) : 0;
 }
 
+const COUNTRY_CODE_ALIASES: Record<string, string> = {
+  bolivia: "BO", "brunei darussalam": "BN", "czech republic": "CZ", "democratic republic of the congo": "CD",
+  "congo democratic republic": "CD", "congo republic": "CG", "ivory coast": "CI", "laos": "LA",
+  "micronesia federated states of": "FM", "north macedonia": "MK", palestine: "PS", russia: "RU",
+  "south korea": "KR", "north korea": "KP", syria: "SY", taiwan: "TW", tanzania: "TZ",
+  "united kingdom": "GB", "united states": "US", "united states of america": "US", venezuela: "VE",
+  vietnam: "VN", "virgin islands british": "VG", "virgin islands us": "VI",
+};
+
+function normalizedCountryName(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+let countryCodeIndex: Map<string, string> | null = null;
+function countryCodeForName(name: string) {
+  const normalized = normalizedCountryName(name);
+  const alias = COUNTRY_CODE_ALIASES[normalized];
+  if (alias) return alias;
+  if (!countryCodeIndex) {
+    const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+    countryCodeIndex = new Map<string, string>();
+    for (let first = 65; first <= 90; first += 1) for (let second = 65; second <= 90; second += 1) {
+      const code = String.fromCharCode(first, second);
+      const displayName = displayNames.of(code);
+      if (displayName && displayName !== code) countryCodeIndex.set(normalizedCountryName(displayName), code);
+    }
+  }
+  return countryCodeIndex.get(normalized) || null;
+}
+
+function flagForCountryCode(code: string | null) {
+  return code ? String.fromCodePoint(...[...code].map((letter) => 127397 + letter.charCodeAt(0))) : "🌐";
+}
+
 export function bloomSmsPurchasesEnabled() { return process.env.BLOOMSMS_PURCHASES_ENABLED === "true"; }
 export function stableBloomReference(uid: string, idempotencyKey: string, prefix = "NXL-BLM") {
   return `${prefix}-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`;
@@ -116,9 +150,11 @@ export async function bloomBalance() {
 
 export async function bloomCountries(): Promise<BloomCountry[]> {
   const result = await request<{ countries?: Array<{ id?: string | number; name?: string }> }>("/countries");
-  return (result.countries || []).flatMap((item) => item.id !== undefined && item.name
-    ? [{ id: String(item.id), name: item.name, shortName: String(item.id), region: "Live inventory" }]
-    : []);
+  return (result.countries || []).flatMap((item) => {
+    if (item.id === undefined || !item.name) return [];
+    const countryCode = countryCodeForName(item.name);
+    return [{ id: String(item.id), name: item.name, shortName: flagForCountryCode(countryCode), countryCode, region: countryCode ? `ISO ${countryCode}` : "Live inventory" }];
+  });
 }
 
 export async function bloomServices(countryId: string): Promise<BloomService[]> {

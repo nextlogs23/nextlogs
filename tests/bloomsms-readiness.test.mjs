@@ -30,6 +30,14 @@ test("provider-assigned flow does not promise exact-number selection", async () 
   assert.match(workspace, /\/api\/bloomsms\/orders/);
 });
 
+test("live countries include ISO-derived flag logos with a neutral fallback", async () => {
+  const [provider, workspace] = await Promise.all([read("src/lib/server/bloomsms.ts"), read("src/components/dashboard/workspace.tsx")]);
+  assert.match(provider, /countryCodeForName/);
+  assert.match(provider, /flagForCountryCode/);
+  assert.match(provider, /"🌐"/);
+  assert.match(workspace, /className="country-flag"/);
+});
+
 test("Firestore denies direct provider-record access and declares user history indexes", async () => {
   const [rules, indexes] = await Promise.all([read("firestore.rules"), read("firestore.indexes.json")]);
   assert.match(rules, /match \/bloomSmsOrders\/\{id\} \{ allow read, write: if false; \}/);

@@ -189,7 +189,7 @@ function TelnyxWorkspace() {
   </>;
 }
 
-type SmsPoolCountry = { id: string; name: string; shortName: string; region: string };
+type SmsPoolCountry = { id: string; name: string; shortName: string; countryCode?: string | null; region: string };
 type SmsPoolService = { id: string; name: string };
 type SmsPoolOffer = { id: string; poolId: number; poolName: string; stock: number; retailPriceMinor: number; expiresAt: string };
 type SmsPoolRentalOffer = { id: string; rentalId: string; name: string; region: string; days: number; refundable: boolean; refundWithinHours: number; retailPriceMinor: number; expiresAt: string };
@@ -348,7 +348,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
           <div className="workspace-card-title"><span>01</span><div><h2>Country and service</h2><p>Availability is loaded live and never simulated.</p></div></div>
           <label className="country-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search country" /></label>
           <div className="country-grid country-list-scroll">{filteredCountries.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseCountry(item)} className={country?.id === item.id ? "is-selected" : ""}>
-            <span>{item.shortName}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
+            <span className="country-flag" aria-hidden="true">{item.shortName}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
           </button>)}</div>
           {country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Only permitted destination services are shown.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label><div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></>}
           {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelected(offer)} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}
