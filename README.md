@@ -45,6 +45,12 @@ https://YOUR_DOMAIN/api/paystack/webhook
 
 The webhook validates the `x-paystack-signature`, verifies the transaction again with Paystack, checks reference, currency and amount, then creates one idempotent wallet credit.
 
+## Manual-funding email notifications
+
+Manual bank-transfer proofs are stored first, then the server sends an idempotent notification through Resend. Set `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `MANUAL_FUNDING_NOTIFICATION_EMAIL` in Vercel. The sender must use a domain verified in Resend. The default notification recipient is `nextlog23@gmail.com`.
+
+Email failure never discards a customer proof or credits a wallet. The request stores a `sent`, `failed`, or `not_configured` notification result for administrator troubleshooting. Proof images remain private and are not attached to email; use the protected admin link in the notification to review them.
+
 ## Telnyx number and SMS integration
 
 Set `TELNYX_API_KEY`, `TELNYX_PUBLIC_KEY`, `TELNYX_MESSAGING_PROFILE_ID`, and `TELNYX_USD_NGN_RATE` in Vercel. `TELNYX_NUMBER_MARKUP_PERCENT` controls the server-side retail markup. Search results are saved as short-lived, user-bound offers, so the browser never determines the number or price charged.

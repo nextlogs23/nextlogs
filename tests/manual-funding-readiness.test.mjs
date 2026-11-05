@@ -42,3 +42,22 @@ test("Firestore declares the manual-funding index for future ordered queries", (
   const index = indexes.indexes.find((item) => item.collectionGroup === "manualFundingRequests");
   assert.deepEqual(index?.fields, [{ fieldPath: "userId", order: "ASCENDING" }, { fieldPath: "createdAt", order: "DESCENDING" }]);
 });
+
+test("accepted payment proofs notify the configured administrator without exposing the private proof", () => {
+  const route = read("src/app/api/wallet/manual-funding/route.ts");
+  const email = read("src/lib/server/email-notifications.ts");
+  const example = read(".env.example");
+
+  assert.match(route, /sendManualFundingNotification/);
+  const persistedProof = route.indexOf("await requestRef.create");
+  const notificationCall = route.indexOf("await sendManualFundingNotification");
+  assert.ok(persistedProof >= 0 && notificationCall > persistedProof);
+  assert.match(route, /emailNotification/);
+  assert.match(email, /https:\/\/api\.resend\.com\/emails/);
+  assert.match(email, /Idempotency-Key/);
+  assert.match(email, /nextlog23@gmail\.com/);
+  assert.doesNotMatch(email, /proof\.pathname|attachments/);
+  assert.match(example, /RESEND_API_KEY=/);
+  assert.match(example, /RESEND_FROM_EMAIL=/);
+  assert.match(example, /MANUAL_FUNDING_NOTIFICATION_EMAIL=nextlog23@gmail\.com/);
+});

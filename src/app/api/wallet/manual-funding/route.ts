@@ -7,6 +7,7 @@ import { requireUser, routeError } from "@/lib/server/auth";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { enforceRateLimit } from "@/lib/server/rate-limit";
 import { getManualFundingSettings, manualFundingReady } from "@/lib/server/manual-funding";
+import { sendManualFundingNotification } from "@/lib/server/email-notifications";
 
 export const runtime = "nodejs";
 
@@ -75,6 +76,18 @@ export async function POST(request: NextRequest) {
       proof: { pathname: blob.pathname, fileName: proof.name.slice(0, 120) || `proof.${detected.extension}`, contentType: detected.mime, size: proof.size },
       status: "pending", createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
     });
+    const notification = await sendManualFundingNotification({
+      reference,
+      amountMinor: input.amountMinor,
+      depositorName: input.depositorName,
+      transferReference: input.transferReference || null,
+      customerEmail: user.email,
+      reviewUrl: new URL("/admin/wallet-transactions", request.nextUrl.origin).toString(),
+    });
+    await requestRef.set({
+      emailNotification: { ...notification, recipient: "nextlog23@gmail.com", attemptedAt: FieldValue.serverTimestamp() },
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true }).catch(() => undefined);
     return Response.json({ reference, status: "pending" }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) return routeError(Object.assign(new Error(error.issues[0]?.message || "Check the transfer details"), { status: 400 }));
