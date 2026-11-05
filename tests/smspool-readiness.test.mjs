@@ -29,13 +29,14 @@ test("adapter uses the documented catalogue, order, status and rental endpoints"
   ]) assert.ok(provider.includes(`"${endpoint}"`), `Missing ${endpoint}`);
 });
 
-test("customer UI offers provider-neutral short-term, monthly and business number choices", () => {
+test("customer UI keeps legacy providers hidden during the BloomSMS migration", () => {
   const workspace = read("src/components/dashboard/workspace.tsx");
   assert.match(workspace, /Temporary number/);
   assert.match(workspace, /Monthly rental/);
-  assert.match(workspace, /Business number/);
+  assert.doesNotMatch(workspace, /title: "Business number"/);
   assert.match(workspace, /ProviderAssignedNumberWorkspace key="temporary" mode="one_time"/);
   assert.match(workspace, /ProviderAssignedNumberWorkspace key="monthly" mode="rental"/);
+  assert.match(workspace, /\/api\/bloomsms\/orders/);
   assert.match(workspace, /Number assigned after purchase/);
   assert.match(workspace, /Exact-number selection is unavailable for this service/);
 });

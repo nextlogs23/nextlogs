@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:smspool": "node --test tests/smspool-readiness.test.mjs",
+    "test:bloomsms": "node --test tests/bloomsms-readiness.test.mjs",
     "test:telnyx": "node --test tests/telnyx-readiness.test.mjs",
     "test:marketplace": "node --test tests/marketplace-readiness.test.mjs",
     "test:manual-funding": "node --test tests/manual-funding-readiness.test.mjs",

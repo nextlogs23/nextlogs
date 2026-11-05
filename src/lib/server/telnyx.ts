@@ -95,7 +95,7 @@ export async function searchTelnyxNumbers(countryCode: string, limit = 20): Prom
 }
 
 export function telnyxPurchasesEnabled() {
-  return process.env.TELNYX_PURCHASES_ENABLED === "true";
+  return process.env.LEGACY_SMS_PROVIDERS_ENABLED === "true" && process.env.TELNYX_PURCHASES_ENABLED === "true";
 }
 
 export function telnyxMessagingProfileId() {

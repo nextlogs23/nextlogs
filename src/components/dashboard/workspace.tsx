@@ -189,10 +189,10 @@ function TelnyxWorkspace() {
   </>;
 }
 
-type SmsPoolCountry = { id: number; name: string; shortName: string; region: string };
-type SmsPoolService = { id: number; name: string };
+type SmsPoolCountry = { id: string; name: string; shortName: string; region: string };
+type SmsPoolService = { id: string; name: string };
 type SmsPoolOffer = { id: string; poolId: number; poolName: string; stock: number; retailPriceMinor: number; expiresAt: string };
-type SmsPoolRentalOffer = { id: string; rentalId: number; name: string; region: string; days: number; refundable: boolean; refundWithinHours: number; retailPriceMinor: number; expiresAt: string };
+type SmsPoolRentalOffer = { id: string; rentalId: string; name: string; region: string; days: number; refundable: boolean; refundWithinHours: number; retailPriceMinor: number; expiresAt: string };
 type SmsPoolOrder = { id?: string; reference: string; phoneNumber?: string | null; countryName?: string | null; serviceName?: string | null; name?: string; days?: number; status: string; retailPriceMinor?: number; expiresAt?: string | null };
 
 // Kept temporarily for migration compatibility with older dashboard bundles.
@@ -230,11 +230,11 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
 
   useEffect(() => {
     const historyRequest = isRental
-      ? api<{ rentals: SmsPoolOrder[] }>("/api/smspool/rentals").then((data) => setRentals(data.rentals))
-      : api<{ orders: SmsPoolOrder[] }>("/api/smspool/orders").then((data) => setOrders(data.orders));
+      ? api<{ rentals: SmsPoolOrder[] }>("/api/bloomsms/rentals").then((data) => setRentals(data.rentals))
+      : api<{ orders: SmsPoolOrder[] }>("/api/bloomsms/orders").then((data) => setOrders(data.orders));
     const catalogRequest = isRental
-      ? api<{ offers: SmsPoolRentalOffer[] }>("/api/smspool/rentals/catalog").then((data) => setRentalOffers(data.offers))
-      : api<{ countries: SmsPoolCountry[] }>("/api/smspool/catalog").then((data) => setCountriesList(data.countries));
+      ? api<{ offers: SmsPoolRentalOffer[] }>("/api/bloomsms/rentals/catalog").then((data) => setRentalOffers(data.offers))
+      : api<{ countries: SmsPoolCountry[] }>("/api/bloomsms/catalog").then((data) => setCountriesList(data.countries));
 
     setLoading(true);
     Promise.all([historyRequest, catalogRequest])
@@ -249,7 +249,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     setSelected(null);
     setLoading(true);
     try {
-      const data = await api<{ services: SmsPoolService[] }>(`/api/smspool/catalog?country=${item.id}`);
+      const data = await api<{ services: SmsPoolService[] }>(`/api/bloomsms/catalog?country=${encodeURIComponent(item.id)}`);
       setServices(data.services);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to load services");
@@ -264,7 +264,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     setSelected(null);
     setLoading(true);
     try {
-      const data = await api<{ offers: SmsPoolOffer[] }>(`/api/smspool/offers?country=${country.id}&service=${item.id}`);
+      const data = await api<{ offers: SmsPoolOffer[] }>(`/api/bloomsms/offers?country=${encodeURIComponent(country.id)}&service=${encodeURIComponent(item.id)}&countryName=${encodeURIComponent(country.name)}`);
       setOffers(data.offers);
       if (!data.offers.length) toast.error("No live stock is available for this selection.");
     } catch (error) {
@@ -279,7 +279,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     if (!offerId) return;
     setBuying(true);
     try {
-      const path = isRental ? "/api/smspool/rentals" : "/api/smspool/orders";
+      const path = isRental ? "/api/bloomsms/rentals" : "/api/bloomsms/orders";
       const result = await api<{ reference: string; number?: string | null; status: string; expiresAt?: string }>(path, {
         method: "POST",
         body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }),
@@ -307,7 +307,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
 
   async function refresh(item: SmsPoolOrder, kind: "one_time" | "rental") {
     try {
-      const path = kind === "rental" ? `/api/smspool/rentals/${item.reference}` : `/api/smspool/orders/${item.reference}`;
+      const path = kind === "rental" ? `/api/bloomsms/rentals/${item.reference}` : `/api/bloomsms/orders/${item.reference}`;
       const data = await api<{ number?: string | null; status: string; expiresAt?: string | null; messages: InboundMessage[] }>(path);
       const next = { ...item, phoneNumber: data.number, status: data.status, expiresAt: data.expiresAt, kind };
       setActive(next);
@@ -367,11 +367,10 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
 }
 
 function SmsWorkspace() {
-  const [experience, setExperience] = useState<"temporary" | "monthly" | "business">("business");
+  const [experience, setExperience] = useState<"temporary" | "monthly">("temporary");
   const choices = [
     { id: "temporary" as const, icon: Bolt, title: "Temporary number", copy: "Short-term, provider-assigned number for one permitted verification." },
     { id: "monthly" as const, icon: Clock3, title: "Monthly rental", copy: "Renewable number rental for supported receive-only messaging use cases." },
-    { id: "business" as const, icon: Building2, title: "Business number", copy: "Browse and select an exact available number for ongoing messaging." },
   ];
 
   return <>
@@ -386,7 +385,6 @@ function SmsWorkspace() {
     <div className="mt-5">
       {experience === "temporary" && <ProviderAssignedNumberWorkspace key="temporary" mode="one_time" />}
       {experience === "monthly" && <ProviderAssignedNumberWorkspace key="monthly" mode="rental" />}
-      {experience === "business" && <TelnyxWorkspace />}
     </div>
   </>;
 }

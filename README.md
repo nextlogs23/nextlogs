@@ -71,6 +71,12 @@ Set `SMSPOOL_API_KEY`, `SMSPOOL_USD_NGN_RATE`, and `SMSPOOL_MARKUP_PERCENT` in V
 
 The integration follows the official OpenAPI specification at `https://api.smspool.net/docs`: country and service catalogues, suggested pools, stock and pricing, one-time SMS ordering/status/cancellation, and rental ordering/status/messages/refunds. SMSPool does **not** expose a browsable list of exact numbers before purchase. Although its purchase endpoint accepts a `phonenumber` field when a number is already known, the public inventory endpoints do not return exact numbers. The UI therefore shows that SMSPool assigns the number after accepting the purchase; Telnyx remains available for exact-number selection.
 
+### BloomSMS staged migration
+
+BloomSMS is the active customer-facing verification catalogue. It uses Bearer-token authentication against `https://bloomsms.com/api/v1`, retrieves live countries, services, stock and USD pricing, and assigns numbers only after an activation succeeds. Older Telnyx and SMSPool integrations remain in the repository for historical-order reconciliation and rollback but are not exposed in the customer number selector.
+
+Keep `BLOOMSMS_PURCHASES_ENABLED=false` until the checklist in `BLOOMSMS_INTEGRATION_REPORT.md` is complete. BloomSMS credentials and price conversion settings are server-only; never prefix them with `NEXT_PUBLIC_`.
+
 Prices are converted from provider USD to wallet NGN using `SMSPOOL_USD_NGN_RATE`, then marked up using `SMSPOOL_MARKUP_PERCENT`. Offers are short-lived and bound to the authenticated user. The server ignores client prices, uses a stable wallet reference for duplicate protection, caps the provider request at the quoted USD price, and refunds only after a definite provider failure or confirmed cancellation/refund. Ambiguous timeouts remain `processing` for administrator reconciliation.
 
 ### SMSPool test checklist

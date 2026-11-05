@@ -51,7 +51,7 @@ function price(providerPriceUsd: number) {
   return { providerCostMinor, retailPriceMinor: Math.max(1, Math.ceil(providerCostMinor * (1 + markup / 100))) };
 }
 
-export function smsPoolPurchasesEnabled() { return process.env.SMSPOOL_PURCHASES_ENABLED === "true"; }
+export function smsPoolPurchasesEnabled() { return process.env.LEGACY_SMS_PROVIDERS_ENABLED === "true" && process.env.SMSPOOL_PURCHASES_ENABLED === "true"; }
 export function stableSmsPoolReference(uid: string, idempotencyKey: string, prefix = "NXL-SP") { return `${prefix}-${createHash("sha256").update(`${uid}:${idempotencyKey}`).digest("hex").slice(0, 24).toUpperCase()}`; }
 
 export async function smsPoolCountries(): Promise<SmsPoolCountry[]> {
