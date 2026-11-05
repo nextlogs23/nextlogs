@@ -1,56 +1,66 @@
-"use client";
+import Link from "next/link";
+import { ArrowLeft, BellRing, Clock3, Mail, ShieldCheck, Sparkles } from "lucide-react";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, BadgeCheck, BellRing, BookOpen, Check, FileText, Mail, Megaphone, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
-import { api } from "@/lib/api-client";
-
-type EmailTemplate = {
-  id: string;
-  title: string;
-  description: string;
-  status: "available" | "coming_soon";
-  icon: typeof Mail;
-  accent: string;
-};
-
-const templates: EmailTemplate[] = [
-  { id: "welcome", title: "Binance", description: "A clean interface card for this layout category. No affiliation is implied.", status: "available", icon: Sparkles, accent: "blue" },
-  { id: "order", title: "Trust Wallet", description: "A structured interface option shown for visual layout comparison only.", status: "available", icon: FileText, accent: "emerald" },
-  { id: "newsletter", title: "Coinbase", description: "A polished category card within the NextLogs preview workspace.", status: "available", icon: Megaphone, accent: "amber" },
-  { id: "security", title: "OKX Wallet", description: "An upcoming interface category with no external wallet connection.", status: "coming_soon", icon: BellRing, accent: "rose" },
+const plannedFeatures = [
+  {
+    icon: ShieldCheck,
+    title: "Verified sender workflows",
+    description: "Email tools designed around authenticated, permission-based communication.",
+  },
+  {
+    icon: Mail,
+    title: "Reusable templates",
+    description: "Prepare consistent transactional and campaign layouts in one workspace.",
+  },
+  {
+    icon: Sparkles,
+    title: "Responsive previews",
+    description: "Review polished email layouts across desktop and mobile before delivery.",
+  },
 ];
 
-const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
-
 export function EmailFlashingWorkspace() {
-  const [balance, setBalance] = useState(0);
-  const [selected, setSelected] = useState<EmailTemplate>(templates[0]);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const templatesRef = useRef<HTMLDivElement>(null);
+  return (
+    <main className="email-coming-page">
+      <section className="email-coming-card">
+        <div className="email-coming-glow" aria-hidden="true" />
+        <div className="email-coming-icon" aria-hidden="true">
+          <Mail size={34} />
+          <span><Clock3 size={15} /></span>
+        </div>
 
-  useEffect(() => { api<{ balanceMinor: number }>("/api/wallet").then((data) => setBalance(data.balanceMinor)).catch(() => {}); }, []);
+        <p className="email-coming-badge"><BellRing size={14} /> Coming soon</p>
+        <h1>Email Flashing is being prepared.</h1>
+        <p className="email-coming-summary">
+          We are building a safe, polished email workspace for verified sender identities.
+          The service is not available for use yet, and no email can be created or sent from this page.
+        </p>
 
-  return <div className="email-flash-page">
-    <section className="email-flash-notice"><ShieldCheck size={17} /><p><b>Verified senders only.</b> This workspace is for lawful, permission-based email design and previews. Sender impersonation and forged headers are not supported.</p></section>
+        <div className="email-coming-actions">
+          <Link href="/dashboard/services"><ArrowLeft size={16} /> Back to services</Link>
+          <Link href="/dashboard">Go to dashboard</Link>
+        </div>
+      </section>
 
-    <section className="email-flash-hero">
-      <div><p className="ui-eyebrow">Email workspace</p><h1>Email Flashing</h1><p>Create refined transactional and campaign email drafts using the same clean workflow as the rest of NextLogs.</p><div className="email-flash-hero-actions"><button type="button" onClick={() => templatesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>Browse templates <ArrowRight size={14} /></button><button type="button" onClick={() => setGuideOpen((value) => !value)}><BookOpen size={14} /> Quick guide</button></div></div>
-      <aside><span><WalletCards size={17} /></span><small>Wallet balance</small><strong>{money(balance)}</strong></aside>
-    </section>
+      <section className="email-coming-planned" aria-labelledby="email-coming-planned-title">
+        <div className="email-coming-heading">
+          <p className="ui-eyebrow">In development</p>
+          <h2 id="email-coming-planned-title">What we are working on</h2>
+          <p>These planned capabilities will remain unavailable until the service is ready.</p>
+        </div>
 
-    {guideOpen && <section className="email-flash-guide"><span><BadgeCheck size={18} /></span><div><b>How this workspace will operate</b><p>Choose a template, prepare a draft, and preview the layout. Real delivery will require a verified domain, recipient consent, unsubscribe handling, and a configured email provider.</p></div></section>}
-
-    <div ref={templatesRef} className="email-flash-section-head"><div><p className="ui-eyebrow">Template library</p><h2>Choose an email experience</h2><p>Select an available layout to preview its structure.</p></div><span>{templates.filter((item) => item.status === "available").length} available</span></div>
-
-    <section className="email-flash-grid">{templates.map((template) => {
-      const Icon = template.icon; const available = template.status === "available"; const active = selected.id === template.id;
-      return <button type="button" key={template.id} disabled={!available} onClick={() => setSelected(template)} className={`${active ? "is-selected" : ""} ${!available ? "is-disabled" : ""}`}><span className={`tone-${template.accent}`}><Icon size={21} /></span><div><h3>{template.title}</h3><p>{template.description}</p><small>{available ? <><i /> Available</> : "Coming soon"}</small></div>{active && <em><Check size={13} /></em>}</button>;
-    })}</section>
-
-    <section className="email-flash-preview">
-      <header><div><p className="ui-eyebrow">Selected template</p><h2>{selected.title}</h2><p>{selected.description}</p></div><span><ShieldCheck size={14} /> Preview mode</span></header>
-      <div className="email-preview-canvas"><div className="email-preview-top"><span><Mail size={18} /></span><div><b>NextLogs</b><small>Verified sender preview</small></div></div><div className="email-preview-body"><small>EMAIL PREVIEW</small><h3>{selected.title} layout preview</h3><p>This is a safe NextLogs interface preview. It does not connect to, impersonate, or claim affiliation with the named wallet platform.</p><span>Primary call to action</span></div></div>
-      <footer><div><ShieldCheck size={16} /><p><b>Delivery is not enabled</b><span>No email is sent from this preview workspace.</span></p></div><button type="button" disabled>Continue to draft <ArrowRight size={14} /></button></footer>
-    </section>
-  </div>;
+        <div className="email-coming-grid">
+          {plannedFeatures.map(({ icon: Icon, title, description }) => (
+            <article key={title}>
+              <span><Icon size={20} /></span>
+              <div>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
 }
