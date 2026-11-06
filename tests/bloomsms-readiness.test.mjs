@@ -12,6 +12,15 @@ test("BloomSMS stays disabled by default and credentials remain server-only", as
   assert.doesNotMatch(client, /BLOOMSMS_API_KEY/);
 });
 
+test("fixed naira markup overrides percentage pricing for every BloomSMS product", async () => {
+  const [env, provider, report] = await Promise.all([read(".env.example"), read("src/lib/server/bloomsms.ts"), read("BLOOMSMS_INTEGRATION_REPORT.md")]);
+  assert.match(env, /BLOOMSMS_FIXED_MARKUP_NGN=2000/);
+  assert.match(provider, /process\.env\.BLOOMSMS_FIXED_MARKUP_NGN/);
+  assert.match(provider, /providerCostMinor \+ Math\.round\(fixedMarkupNgn \* 100\)/);
+  assert.match(provider, /fixedMarkupNgn !== null/);
+  assert.match(report, /fixed naira amount is added to every temporary-number and rental product/);
+});
+
 test("customer routes use protected offers, idempotency and atomic wallet operations", async () => {
   const [orders, rentals] = await Promise.all([read("src/app/api/bloomsms/orders/route.ts"), read("src/app/api/bloomsms/rentals/route.ts")]);
   for (const source of [orders, rentals]) {
@@ -28,6 +37,10 @@ test("provider-assigned flow does not promise exact-number selection", async () 
   assert.match(offers, /exactNumberSelectionSupported: false/);
   assert.match(workspace, /Number assigned after purchase/);
   assert.match(workspace, /\/api\/bloomsms\/orders/);
+  assert.match(workspace, /Review number purchase/);
+  assert.match(workspace, /Confirm temporary number/);
+  assert.match(workspace, /purchaseAttempt\?\.offerId === offerId/);
+  assert.match(workspace, /idempotencyKey: attempt\.idempotencyKey/);
 });
 
 test("live countries include real ISO-derived flag images with a neutral fallback", async () => {

@@ -94,10 +94,16 @@ async function request<T>(path: string, options: { method?: "GET" | "POST" | "PA
 function price(providerPriceUsd: number) {
   const rate = Number(process.env.BLOOMSMS_USD_NGN_RATE);
   const markup = Number(process.env.BLOOMSMS_MARKUP_PERCENT ?? 20);
+  const fixedMarkupRaw = process.env.BLOOMSMS_FIXED_MARKUP_NGN?.trim();
+  const fixedMarkupNgn = fixedMarkupRaw ? Number(fixedMarkupRaw) : null;
   if (!Number.isFinite(rate) || rate <= 0) throw new BloomSmsError("BLOOMSMS_USD_NGN_RATE is not configured correctly", 503);
   if (!Number.isFinite(markup) || markup < 0 || markup > 500) throw new BloomSmsError("BLOOMSMS_MARKUP_PERCENT is invalid", 503);
+  if (fixedMarkupNgn !== null && (!Number.isFinite(fixedMarkupNgn) || fixedMarkupNgn < 0 || fixedMarkupNgn > 1_000_000)) throw new BloomSmsError("BLOOMSMS_FIXED_MARKUP_NGN is invalid", 503);
   const providerCostMinor = Math.round(providerPriceUsd * rate * 100);
-  return { providerCostMinor, retailPriceMinor: Math.max(1, Math.ceil(providerCostMinor * (1 + markup / 100))) };
+  const retailPriceMinor = fixedMarkupNgn !== null
+    ? providerCostMinor + Math.round(fixedMarkupNgn * 100)
+    : Math.ceil(providerCostMinor * (1 + markup / 100));
+  return { providerCostMinor, retailPriceMinor: Math.max(1, retailPriceMinor) };
 }
 
 function daysFromPeriod(period: string) {

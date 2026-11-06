@@ -19,10 +19,11 @@ BLOOMSMS_API_URL=https://bloomsms.com/api/v1
 BLOOMSMS_API_KEY=
 BLOOMSMS_USD_NGN_RATE=
 BLOOMSMS_MARKUP_PERCENT=20
+BLOOMSMS_FIXED_MARKUP_NGN=2000
 BLOOMSMS_PURCHASES_ENABLED=false
 ```
 
-`BLOOMSMS_USD_NGN_RATE` must be a deliberate operational exchange rate. Prices are calculated on the server from the provider USD price, the configured rate and markup.
+`BLOOMSMS_USD_NGN_RATE` must be a deliberate operational exchange rate. Prices are calculated on the server from the provider USD price and configured rate. When `BLOOMSMS_FIXED_MARKUP_NGN` is set, that fixed naira amount is added to every temporary-number and rental product; otherwise `BLOOMSMS_MARKUP_PERCENT` is used as the fallback.
 
 ## Before enabling purchases
 

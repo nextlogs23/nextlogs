@@ -250,6 +250,8 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
   const [messages, setMessages] = useState<InboundMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [purchaseAttempt, setPurchaseAttempt] = useState<{ offerId: string; idempotencyKey: string } | null>(null);
   const [query, setQuery] = useState("");
   const [serviceQuery, setServiceQuery] = useState("");
 
@@ -272,6 +274,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     setService(null);
     setOffers([]);
     setSelected(null);
+    setPurchaseAttempt(null);
     setLoading(true);
     try {
       const data = await api<{ services: SmsPoolService[] }>(`/api/bloomsms/catalog?country=${encodeURIComponent(item.id)}`);
@@ -287,6 +290,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     if (!country) return;
     setService(item);
     setSelected(null);
+    setPurchaseAttempt(null);
     setLoading(true);
     try {
       const data = await api<{ offers: SmsPoolOffer[] }>(`/api/bloomsms/offers?country=${encodeURIComponent(country.id)}&service=${encodeURIComponent(item.id)}&countryName=${encodeURIComponent(country.name)}`);
@@ -299,15 +303,24 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     }
   }
 
+  function reviewPurchase() {
+    const offerId = isRental ? selectedRental?.id : selected?.id;
+    if (!offerId) return;
+    setPurchaseAttempt((current) => current?.offerId === offerId ? current : { offerId, idempotencyKey: crypto.randomUUID() });
+    setConfirming(true);
+  }
+
   async function purchase() {
     const offerId = isRental ? selectedRental?.id : selected?.id;
     if (!offerId) return;
+    const attempt = purchaseAttempt?.offerId === offerId ? purchaseAttempt : { offerId, idempotencyKey: crypto.randomUUID() };
+    if (!purchaseAttempt || purchaseAttempt.offerId !== offerId) setPurchaseAttempt(attempt);
     setBuying(true);
     try {
       const path = isRental ? "/api/bloomsms/rentals" : "/api/bloomsms/orders";
       const result = await api<{ reference: string; number?: string | null; status: string; expiresAt?: string }>(path, {
         method: "POST",
-        body: JSON.stringify({ offerId, idempotencyKey: crypto.randomUUID() }),
+        body: JSON.stringify({ offerId, idempotencyKey: attempt.idempotencyKey }),
       });
       const next: SmsPoolOrder = {
         reference: result.reference,
@@ -322,6 +335,8 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
       if (isRental) setRentals((rows) => [next, ...rows]);
       else setOrders((rows) => [next, ...rows]);
       setActive({ ...next, kind: mode });
+      setConfirming(false);
+      setPurchaseAttempt(null);
       toast.success(isRental ? "Monthly rental submitted." : "Temporary number order submitted.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to purchase");
@@ -373,7 +388,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
         {isRental ? <>
           <div className="workspace-card-title"><span>01</span><div><h2>Choose rental duration</h2><p>Live rental products, terms, and refund eligibility.</p></div></div>
           {loading ? <div className="service-skeleton-grid"><div /><div /><div /></div> : rentalOffers.length ? <div className="sms-service-grid">
-            {rentalOffers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelectedRental(offer)} className={selectedRental?.id === offer.id ? "is-selected" : ""}>
+            {rentalOffers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelectedRental(offer); setPurchaseAttempt(null); }} className={selectedRental?.id === offer.id ? "is-selected" : ""}>
               <RentalBrandLogo serviceName={offer.name} /><div><b>{offer.name} · {offer.days} days</b><small>{money(offer.retailPriceMinor)} · {offer.refundable ? `Refundable within ${offer.refundWithinHours}h under provider rules` : "Non-refundable"}</small></div>{selectedRental?.id === offer.id && <Check size={14} />}
             </button>)}
           </div> : <EmptyState icon={Clock3} title="No rentals available" copy="No live rental products are available right now. Please check again later." />}
@@ -384,18 +399,24 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
             <span className="country-flag">{item.countryCode ? <Image src={`https://flagcdn.com/w40/${item.countryCode.toLowerCase()}.png`} width={40} height={30} alt={`${item.name} flag`} unoptimized /> : <Globe2 size={19} aria-label="Country flag unavailable" />}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
           </button>)}</div>
           {country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Only permitted destination services are shown.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label><div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></>}
-          {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelected(offer)} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}
+          {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelected(offer); setPurchaseAttempt(null); }} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}
         </>}
       </section>
       <aside className="space-y-5">
         <section className="verification-summary">
           <div className="flex items-center justify-between"><p className="ui-eyebrow text-[#ffb6c8]">Order summary</p><Status value={active?.status || (currentOffer ? "ready" : "pending")} /></div>
-          {active ? <><div className="assigned-number"><small>{active.phoneNumber ? "Assigned number" : "Awaiting assignment"}</small><div><b>{active.phoneNumber || "Pending provider"}</b>{active.phoneNumber && <button onClick={() => navigator.clipboard.writeText(active.phoneNumber!)} aria-label="Copy assigned number"><Copy size={15} /></button>}</div><p>Reference: {active.reference}</p></div><button onClick={() => refresh(active, active.kind)} className="verification-refresh"><LoaderCircle size={15} /> Refresh status and inbox</button><div className="sms-inbox">{messages.length ? messages.map((message) => <div key={message.id || `${message.receivedAt}-${message.text}`}><span><Inbox size={15} /></span><div><b>{message.text}</b><small>{message.from || "Message provider"} · {message.receivedAt}</small></div></div>) : <EmptyState icon={Inbox} title="Waiting for SMS" copy="Only genuine messages returned by the number provider will appear here." />}</div></> : <><div className="summary-placeholder"><Smartphone size={26} /><h3>Number assigned after purchase</h3><p>Exact-number selection is unavailable for this service. Your number appears only after the provider accepts the order.</p></div><div className="summary-lines"><p><span>Product</span><b>{isRental ? selectedRental ? `${selectedRental.name} · ${selectedRental.days} days` : "—" : service?.name || "—"}</b></p><p><span>Availability</span><b>{isRental ? selectedRental ? "Live rental" : "—" : selected ? selected.stock > 0 ? `${selected.stock} in stock` : "Live" : "—"}</b></p><p><span>Total</span><b>{currentOffer ? money(currentOffer.retailPriceMinor) : "—"}</b></p></div><button disabled={!currentOffer || buying} onClick={purchase} className="ui-button-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45">{buying ? <LoaderCircle className="animate-spin" size={16} /> : <KeyRound size={16} />} {isRental ? "Start monthly rental" : "Purchase temporary number"}</button></>}
+          {active ? <><div className="assigned-number"><small>{active.phoneNumber ? "Assigned number" : "Awaiting assignment"}</small><div><b>{active.phoneNumber || "Pending provider"}</b>{active.phoneNumber && <button onClick={() => navigator.clipboard.writeText(active.phoneNumber!)} aria-label="Copy assigned number"><Copy size={15} /></button>}</div><p>Reference: {active.reference}</p></div><button onClick={() => refresh(active, active.kind)} className="verification-refresh"><LoaderCircle size={15} /> Refresh status and inbox</button><div className="sms-inbox">{messages.length ? messages.map((message) => <div key={message.id || `${message.receivedAt}-${message.text}`}><span><Inbox size={15} /></span><div><b>{message.text}</b><small>{message.from || "Message provider"} · {message.receivedAt}</small></div></div>) : <EmptyState icon={Inbox} title="Waiting for SMS" copy="Only genuine messages returned by the number provider will appear here." />}</div></> : <><div className="summary-placeholder"><Smartphone size={26} /><h3>Number assigned after purchase</h3><p>Exact-number selection is unavailable for this service. Your number appears only after the provider accepts the order.</p></div><div className="summary-lines"><p><span>Product</span><b>{isRental ? selectedRental ? `${selectedRental.name} · ${selectedRental.days} days` : "—" : service?.name || "—"}</b></p><p><span>Availability</span><b>{isRental ? selectedRental ? "Live rental" : "—" : selected ? selected.stock > 0 ? `${selected.stock} in stock` : "Live" : "—"}</b></p><p><span>Total</span><b>{currentOffer ? money(currentOffer.retailPriceMinor) : "—"}</b></p></div><button disabled={!currentOffer || buying} onClick={reviewPurchase} className="ui-button-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45">{buying ? <LoaderCircle className="animate-spin" size={16} /> : <KeyRound size={16} />} {isRental ? "Review monthly rental" : "Review number purchase"}</button></>}
         </section>
         <div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted messaging. Automated account creation and verification bypass are prohibited.</p></div></div>
       </aside>
     </div>
     <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td><td><button type="button" onClick={() => refresh(item, item.kind)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
+    {confirming && currentOffer && <ConfirmModal title={isRental ? "Confirm monthly rental" : "Confirm temporary number"} busy={buying} onClose={() => !buying && setConfirming(false)} onConfirm={purchase}>
+      <p><span>Service</span><b>{isRental ? selectedRental?.name : service?.name}</b></p>
+      <p><span>{isRental ? "Rental period" : "Country"}</span><b>{isRental ? `${selectedRental?.days} days` : country?.name}</b></p>
+      <p><span>Wallet debit</span><b>{money(currentOffer.retailPriceMinor)}</b></p>
+      <p><span>Number assignment</span><b>After provider approval</b></p>
+    </ConfirmModal>}
   </>;
 }
 
