@@ -34,7 +34,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 .country-search{min-height:46px;border-radius:12px}.country-search input{font-size:12px}.country-grid,.sms-service-grid{gap:12px}.country-grid button,.sms-service-grid button,.network-card,.plan-grid button,.amount-options button{overflow:hidden;border-color:var(--line);background:var(--surface-soft);transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease,color .18s ease}
 .country-grid button{min-height:66px;padding:12px 14px}.country-grid button>span{font-size:22px}.country-grid button b,.sms-service-grid button b,.plan-grid button b{color:var(--ink);font-size:12px;font-weight:750;line-height:1.25}.country-grid button small,.sms-service-grid button small,.plan-grid button small{margin-top:4px;color:var(--muted);font-size:10px;font-weight:600}
-.country-grid button>.country-flag{display:grid;width:36px;height:36px;flex:0 0 36px;place-items:center;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:11px;background:#fff;box-shadow:0 5px 14px rgba(20,52,87,.09);font-family:"Segoe UI Emoji","Apple Color Emoji",sans-serif;font-size:22px;line-height:1}
+.country-grid button>.country-flag{display:grid;width:40px;height:34px;flex:0 0 40px;overflow:hidden;place-items:center;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:9px;background:#fff;color:#4f6f8f;box-shadow:0 5px 14px rgba(20,52,87,.09);line-height:1}
+.country-grid button>.country-flag img{display:block;width:100%;height:100%;object-fit:cover}
 html.dark .country-grid button>.country-flag{border-color:#38536c;background:#f8fbff;box-shadow:0 6px 16px rgba(0,0,0,.2)}
 .country-grid button:hover:not(.is-selected),.sms-service-grid button:hover:not(.is-selected),.network-card:hover:not(.is-selected),.plan-grid button:hover:not(.is-selected),.amount-options button:hover:not(.is-selected){border-color:color-mix(in srgb,var(--brand) 36%,var(--line));background:color-mix(in srgb,var(--brand) 5%,var(--surface));box-shadow:0 10px 24px rgba(20,52,87,.07);transform:translateY(-2px)}
 .country-grid button.is-selected,.sms-service-grid button.is-selected,.network-card.is-selected,.plan-grid button.is-selected,.amount-options button.is-selected{border-color:color-mix(in srgb,var(--brand) 72%,var(--line));background:color-mix(in srgb,var(--brand) 12%,var(--surface));color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 10%,transparent),0 10px 24px rgba(20,52,87,.06)}
@@ -42,6 +43,10 @@ html.dark .country-grid button>.country-flag{border-color:#38536c;background:#f8
 .country-grid button.is-selected small,.sms-service-grid button.is-selected small,.plan-grid button.is-selected small{color:var(--muted)}
 .country-grid button.is-selected>svg,.sms-service-grid button.is-selected>svg,.network-card.is-selected>svg,.plan-grid button.is-selected>svg{color:var(--brand)}
 .sms-service-grid button{min-height:72px;padding:13px}.sms-service-grid button>span{width:40px;height:40px;border-radius:11px;background:color-mix(in srgb,var(--brand) 10%,var(--surface));color:var(--brand)}
+.sms-service-grid button>.rental-brand-logo{display:grid;width:44px;height:44px;flex:0 0 44px;overflow:hidden;place-items:center;border:1px solid color-mix(in srgb,var(--brand) 13%,var(--line));border-radius:13px;background:#fff;box-shadow:0 6px 14px rgba(7,35,69,.08)}
+.rental-brand-logo img{display:block;width:28px;height:28px;object-fit:contain}
+.sms-service-grid button>.rental-brand-logo.is-fallback{background:color-mix(in srgb,var(--brand) 10%,var(--surface));color:var(--brand)}
+html.dark .sms-service-grid button>.rental-brand-logo{border-color:#38536b;background:#f8fbff;box-shadow:0 7px 18px rgba(0,0,0,.2)}
 .amount-options button{height:46px;font-size:12px}.network-card b{font-size:12px}
 
 .verification-summary{padding:24px;background:radial-gradient(circle at 105% -5%,rgba(112,184,255,.24),transparent 34%),linear-gradient(145deg,#0a294b,#123f70 64%,#1769e0);box-shadow:0 20px 46px rgba(15,55,95,.18)}

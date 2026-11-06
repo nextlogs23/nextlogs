@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "flagcdn.com", pathname: "/w40/**" },
+      { protocol: "https", hostname: "cdn.simpleicons.org", pathname: "/**" },
+    ],
+  },
   turbopack: { root: process.cwd() },
   // A single build worker avoids Windows directory-creation races in nested
   // App Router output while remaining fully portable on Vercel.

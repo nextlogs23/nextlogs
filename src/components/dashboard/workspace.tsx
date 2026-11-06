@@ -74,6 +74,31 @@ function EmptyState({ icon: Icon, title, copy, action }: { icon: typeof Inbox; t
   return <div className="ui-empty"><span className="ui-empty-icon"><Icon size={22} /></span><h3 className="mt-4 text-sm font-black">{title}</h3><p className="mt-2 max-w-sm text-xs leading-5 text-[var(--muted)]">{copy}</p>{action && <div className="mt-5">{action}</div>}</div>;
 }
 
+const rentalBrandLogos = [
+  { pattern: /facebook|meta/i, name: "Facebook", src: "https://cdn.simpleicons.org/facebook/1877F2" },
+  { pattern: /whatsapp/i, name: "WhatsApp", src: "https://cdn.simpleicons.org/whatsapp/25D366" },
+  { pattern: /wechat|weixin/i, name: "WeChat", src: "https://cdn.simpleicons.org/wechat/07C160" },
+  { pattern: /telegram/i, name: "Telegram", src: "/logos/telegram.png" },
+  { pattern: /instagram/i, name: "Instagram", src: "/logos/instagram.png" },
+  { pattern: /tiktok/i, name: "TikTok", src: "/logos/tiktok.png" },
+  { pattern: /google|gmail|youtube/i, name: "Google", src: "/logos/google.png" },
+  { pattern: /discord/i, name: "Discord", src: "https://cdn.simpleicons.org/discord/5865F2" },
+  { pattern: /twitter|\bx\b/i, name: "X", src: "https://cdn.simpleicons.org/x/111827" },
+  { pattern: /microsoft|outlook|hotmail/i, name: "Microsoft", src: "https://cdn.simpleicons.org/microsoft/5E5E5E" },
+  { pattern: /linkedin/i, name: "LinkedIn", src: "https://cdn.simpleicons.org/linkedin/0A66C2" },
+  { pattern: /snapchat/i, name: "Snapchat", src: "https://cdn.simpleicons.org/snapchat/FFFC00" },
+  { pattern: /viber/i, name: "Viber", src: "https://cdn.simpleicons.org/viber/7360F2" },
+  { pattern: /\bline\b/i, name: "LINE", src: "https://cdn.simpleicons.org/line/00C300" },
+  { pattern: /signal/i, name: "Signal", src: "https://cdn.simpleicons.org/signal/3A76F0" },
+] as const;
+
+function RentalBrandLogo({ serviceName }: { serviceName: string }) {
+  const brand = rentalBrandLogos.find((item) => item.pattern.test(serviceName));
+  return <span className={`rental-brand-logo${brand ? "" : " is-fallback"}`}>
+    {brand ? <Image src={brand.src} width={28} height={28} alt={`${brand.name} logo`} unoptimized /> : <MessageSquareText size={20} aria-label="Messaging service" />}
+  </span>;
+}
+
 function Status({ value = "pending" }: { value?: string }) {
   const status = value.toLowerCase();
   const cls = status === "successful" || status === "received" || status === "completed" ? "ui-badge-success" : status === "failed" || status === "cancelled" || status === "expired" ? "ui-badge-danger" : "ui-badge-warning";
@@ -341,14 +366,14 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
           <div className="workspace-card-title"><span>01</span><div><h2>Choose rental duration</h2><p>Live rental products, terms, and refund eligibility.</p></div></div>
           {loading ? <div className="service-skeleton-grid"><div /><div /><div /></div> : rentalOffers.length ? <div className="sms-service-grid">
             {rentalOffers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelectedRental(offer)} className={selectedRental?.id === offer.id ? "is-selected" : ""}>
-              <span><Clock3 size={18} /></span><div><b>{offer.name} · {offer.days} days</b><small>{money(offer.retailPriceMinor)} · {offer.refundable ? `Refundable within ${offer.refundWithinHours}h under provider rules` : "Non-refundable"}</small></div>{selectedRental?.id === offer.id && <Check size={14} />}
+              <RentalBrandLogo serviceName={offer.name} /><div><b>{offer.name} · {offer.days} days</b><small>{money(offer.retailPriceMinor)} · {offer.refundable ? `Refundable within ${offer.refundWithinHours}h under provider rules` : "Non-refundable"}</small></div>{selectedRental?.id === offer.id && <Check size={14} />}
             </button>)}
           </div> : <EmptyState icon={Clock3} title="No rentals available" copy="No live rental products are available right now. Please check again later." />}
         </> : <>
           <div className="workspace-card-title"><span>01</span><div><h2>Country and service</h2><p>Availability is loaded live and never simulated.</p></div></div>
           <label className="country-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search country" /></label>
           <div className="country-grid country-list-scroll">{filteredCountries.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseCountry(item)} className={country?.id === item.id ? "is-selected" : ""}>
-            <span className="country-flag" aria-hidden="true">{item.shortName}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
+            <span className="country-flag">{item.countryCode ? <Image src={`https://flagcdn.com/w40/${item.countryCode.toLowerCase()}.png`} width={40} height={30} alt={`${item.name} flag`} unoptimized /> : <Globe2 size={19} aria-label="Country flag unavailable" />}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
           </button>)}</div>
           {country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Only permitted destination services are shown.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label><div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></>}
           {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => setSelected(offer)} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}
