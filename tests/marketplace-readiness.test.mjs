@@ -179,7 +179,7 @@ test("admin marketplace orders use a responsive management layout", () => {
   assert.match(styles, /@media\(max-width:700px\).*admin-market-orders-list/);
 });
 
-test("prohibited credential and fake-engagement products are rejected", () => {
+test("restricted listings are retained as private drafts and cannot be published", () => {
   const helper = read("src/lib/server/marketplace.ts");
   const admin = read("src/app/api/admin/marketplace/route.ts");
   const manager = read("src/components/admin/marketplace-manager.tsx");
@@ -188,8 +188,12 @@ test("prohibited credential and fake-engagement products are rejected", () => {
   assert.match(helper, /verification\\s\+bypass/);
   assert.match(helper, /prohibitedCredentialLanguage/);
   assert.match(helper, /prohibitedEngagementLanguage/);
-  assert.match(helper, /engagement-for-sale products are not supported/);
-  assert.match(admin, /assertPermittedMarketplaceProduct/);
+  assert.match(helper, /marketplaceProductRestriction/);
+  assert.match(admin, /active: restriction \? false : input\.active/);
+  assert.match(admin, /moderationStatus: restriction \? "needs_review" : "approved"/);
+  assert.match(admin, /draftReview: Boolean\(restriction\)/);
+  assert.match(admin, /This draft cannot be published yet/);
+  assert.match(manager, /Product saved privately for review/);
   assert.match(manager, /admin-market-form-error/);
   assert.match(manager, /setFormError/);
   assert.match(manager, /setEditError/);

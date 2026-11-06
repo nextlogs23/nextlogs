@@ -344,7 +344,15 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     }
   }
 
-  const filteredCountries = countriesList.filter((item) => `${item.name} ${item.shortName}`.toLowerCase().includes(query.toLowerCase()));
+  const preferredCountries = ["US", "GB", "DE", "PL", "IT"];
+  const filteredCountries = countriesList
+    .filter((item) => `${item.name} ${item.shortName} ${item.countryCode || ""}`.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => {
+      const aRank = preferredCountries.indexOf(a.countryCode || "");
+      const bRank = preferredCountries.indexOf(b.countryCode || "");
+      if (aRank !== -1 || bRank !== -1) return (aRank === -1 ? preferredCountries.length : aRank) - (bRank === -1 ? preferredCountries.length : bRank);
+      return a.name.localeCompare(b.name);
+    });
   const filteredServices = services.filter((item) => item.name.toLowerCase().includes(serviceQuery.toLowerCase()));
   const currentOffer = isRental ? selectedRental : selected;
   const rows = isRental

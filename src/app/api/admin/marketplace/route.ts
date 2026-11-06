@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin, routeError } from "@/lib/server/auth";
 import { adminDb } from "@/lib/server/firebase-admin";
-import { assertPermittedMarketplaceProduct, marketplaceCategories, marketplaceFulfillment, marketplaceKinds } from "@/lib/server/marketplace";
+import { marketplaceCategories, marketplaceFulfillment, marketplaceKinds, marketplaceProductRestriction } from "@/lib/server/marketplace";
 
 const previewUrlSchema = z.string().url().max(2000).refine((value) => /^https?:\/\//i.test(value), "Preview links must use HTTP or HTTPS");
 const downloadFileSchema = z.object({
@@ -54,13 +54,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const admin = await requireAdmin(request); const input = productSchema.parse(await request.json());
-    assertPermittedMarketplaceProduct(input.title, input.description, input.previewBullets.join(" "));
+    const restriction = marketplaceProductRestriction(input.title, input.description, input.previewBullets.join(" "));
+    const product = { ...input, active: restriction ? false : input.active, moderationStatus: restriction ? "needs_review" : "approved", moderationNote: restriction };
     const db = adminDb(); const productRef = db.collection("marketplaceProducts").doc(); const auditRef = db.collection("adminAuditLogs").doc();
     await db.runTransaction(async (transaction) => {
-      transaction.create(productRef, { ...input, badge: input.badge || null, iconUrl: input.iconUrl || null, deliveryUrl: input.deliveryUrl || null, archivedAt: null, createdBy: admin.uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-      transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_product_created", targetId: productRef.id, reason: "New marketplace catalogue item", metadata: { title: input.title, active: input.active }, createdAt: FieldValue.serverTimestamp() });
+      transaction.create(productRef, { ...product, badge: input.badge || null, iconUrl: input.iconUrl || null, deliveryUrl: input.deliveryUrl || null, archivedAt: null, createdBy: admin.uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+      transaction.create(auditRef, { actorUid: admin.uid, action: restriction ? "marketplace_product_draft_review" : "marketplace_product_created", targetId: productRef.id, reason: restriction || "New marketplace catalogue item", metadata: { title: input.title, active: product.active }, createdAt: FieldValue.serverTimestamp() });
     });
-    return Response.json({ id: productRef.id, created: true });
+    return Response.json({ id: productRef.id, created: true, draftReview: Boolean(restriction), message: restriction ? `Product saved privately as a draft. ${restriction}` : null });
   } catch (error) { if (error instanceof z.ZodError) return routeError(Object.assign(new Error(error.issues[0]?.message || "Invalid product"), { status: 400 })); return routeError(error); }
 }
 
@@ -69,7 +70,7 @@ export async function PATCH(request: NextRequest) {
     const admin = await requireAdmin(request); const input = actionSchema.parse(await request.json()); const db = adminDb();
     if (input.action === "toggle") {
       const productRef = db.collection("marketplaceProducts").doc(input.productId); const auditRef = db.collection("adminAuditLogs").doc();
-      await db.runTransaction(async (transaction) => { const product = await transaction.get(productRef); if (!product.exists) throw Object.assign(new Error("Product not found"), { status: 404 }); if (product.data()?.archivedAt) throw Object.assign(new Error("Restore this product before publishing it"), { status: 409 }); transaction.update(productRef, { active: input.active, updatedAt: FieldValue.serverTimestamp() }); transaction.create(auditRef, { actorUid: admin.uid, action: input.active ? "marketplace_product_enabled" : "marketplace_product_disabled", targetId: input.productId, reason: "Catalogue availability changed", createdAt: FieldValue.serverTimestamp() }); });
+      await db.runTransaction(async (transaction) => { const product = await transaction.get(productRef); if (!product.exists) throw Object.assign(new Error("Product not found"), { status: 404 }); const data = product.data()!; if (data.archivedAt) throw Object.assign(new Error("Restore this product before publishing it"), { status: 409 }); const restriction = input.active ? marketplaceProductRestriction(String(data.title || ""), String(data.description || ""), Array.isArray(data.previewBullets) ? data.previewBullets.join(" ") : "") : null; if (restriction) throw Object.assign(new Error(`This draft cannot be published yet. ${restriction}`), { status: 400, code: "MARKETPLACE_PRODUCT_RESTRICTED" }); transaction.update(productRef, { active: input.active, moderationStatus: "approved", moderationNote: null, updatedAt: FieldValue.serverTimestamp() }); transaction.create(auditRef, { actorUid: admin.uid, action: input.active ? "marketplace_product_enabled" : "marketplace_product_disabled", targetId: input.productId, reason: "Catalogue availability changed", createdAt: FieldValue.serverTimestamp() }); });
       return Response.json({ updated: true });
     }
     if (input.action === "feature") {
@@ -77,10 +78,11 @@ export async function PATCH(request: NextRequest) {
       return Response.json({ updated: true });
     }
     if (input.action === "edit") {
-      assertPermittedMarketplaceProduct(input.product.title, input.product.description, input.product.previewBullets.join(" "));
+      const restriction = marketplaceProductRestriction(input.product.title, input.product.description, input.product.previewBullets.join(" "));
+      const product = { ...input.product, active: restriction ? false : input.product.active, moderationStatus: restriction ? "needs_review" : "approved", moderationNote: restriction };
       const productRef = db.collection("marketplaceProducts").doc(input.productId); const auditRef = db.collection("adminAuditLogs").doc();
-      await db.runTransaction(async (transaction) => { const current = await transaction.get(productRef); if (!current.exists) throw Object.assign(new Error("Product not found"), { status: 404 }); if (current.data()?.archivedAt) throw Object.assign(new Error("Restore this product before editing it"), { status: 409 }); transaction.update(productRef, { ...input.product, badge: input.product.badge || null, iconUrl: input.product.iconUrl || null, deliveryUrl: input.product.deliveryUrl || null, editedBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.create(auditRef, { actorUid: admin.uid, action: "marketplace_product_edited", targetId: input.productId, reason: "Catalogue product details updated", metadata: { title: input.product.title, active: input.product.active }, createdAt: FieldValue.serverTimestamp() }); });
-      return Response.json({ updated: true });
+      await db.runTransaction(async (transaction) => { const current = await transaction.get(productRef); if (!current.exists) throw Object.assign(new Error("Product not found"), { status: 404 }); if (current.data()?.archivedAt) throw Object.assign(new Error("Restore this product before editing it"), { status: 409 }); transaction.update(productRef, { ...product, badge: input.product.badge || null, iconUrl: input.product.iconUrl || null, deliveryUrl: input.product.deliveryUrl || null, editedBy: admin.uid, updatedAt: FieldValue.serverTimestamp() }); transaction.create(auditRef, { actorUid: admin.uid, action: restriction ? "marketplace_product_draft_review" : "marketplace_product_edited", targetId: input.productId, reason: restriction || "Catalogue product details updated", metadata: { title: input.product.title, active: product.active }, createdAt: FieldValue.serverTimestamp() }); });
+      return Response.json({ updated: true, draftReview: Boolean(restriction), message: restriction ? `Changes saved privately. ${restriction}` : null });
     }
     if (input.action === "archive") {
       const productRef = db.collection("marketplaceProducts").doc(input.productId); const auditRef = db.collection("adminAuditLogs").doc();
