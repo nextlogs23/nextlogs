@@ -16,6 +16,7 @@
     "test:telnyx": "node --test tests/telnyx-readiness.test.mjs",
     "test:marketplace": "node --test tests/marketplace-readiness.test.mjs",
     "test:manual-funding": "node --test tests/manual-funding-readiness.test.mjs",
+    "test:paymonetra": "node --test tests/paymonetra-readiness.test.mjs",
     "test:vtugate": "node --test tests/vtugate-readiness.test.mjs"
   },
   "dependencies": {

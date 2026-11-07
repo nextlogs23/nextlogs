@@ -15,7 +15,7 @@ const services = [
   { name: "Electricity bills", copy: "Validate and pay your meter", href: "/dashboard/electricity", icon: Bolt, color: "amber" },
   { name: "Cable TV", copy: "Verify and renew a subscription", href: "/dashboard/cable", icon: Tv, color: "violet" },
   { name: "Digital marketplace", copy: "Browse available products", href: "/dashboard/marketplace", icon: Store, color: "violet" },
-  { name: "Wallet funding", copy: "Add funds through Paystack", href: "/dashboard/wallet", icon: WalletCards, color: "emerald" },
+  { name: "Wallet funding", copy: "Add funds through Paymonetra", href: "/dashboard/wallet", icon: WalletCards, color: "emerald" },
 ] as const;
 
 function dateText(value: Transaction["createdAt"]) {

@@ -1,6 +1,6 @@
 # Nextlogs
 
-Production-oriented SMS verification and Nigerian VTU platform built with Next.js App Router, TypeScript, Tailwind CSS, Firebase and Paystack. The interface includes the marketing site, Firebase authentication, customer workspace and administrator control centre.
+Production-oriented SMS verification and Nigerian VTU platform built with Next.js App Router, TypeScript, Tailwind CSS, Firebase and Paymonetra. The interface includes the marketing site, Firebase authentication, customer workspace and administrator control centre.
 
 ## What is implemented
 
@@ -10,7 +10,7 @@ Production-oriented SMS verification and Nigerian VTU platform built with Next.j
 - Admin dashboard for users, orders, wallet activity, providers, pricing, analytics and settings
 - Firebase Admin bearer-token verification and role checks
 - Atomic, idempotent wallet ledger with negative-balance protection
-- Signed Paystack webhook plus server-to-server payment verification
+- Signed Paymonetra webhook plus server-to-server payment verification
 - Server-only Telnyx number search, purchase, provisioning and inbound SMS integration
 - Rate limits, input validation, immutable audit logs and strict Firestore rules
 - Vercel-compatible build and environment configuration
@@ -35,15 +35,17 @@ firebase deploy --project YOUR_PROJECT_ID --only firestore:rules,firestore:index
 
 The first administrator should be promoted out-of-band using the Firebase Admin SDK or console by setting `users/{uid}.role` to `admin`. Never allow clients to assign roles.
 
-## Paystack
+## Paymonetra Gateway
 
-Use a test secret first. Set the Paystack webhook to:
+Create a Paymonetra Business account and start with an `sk_test_` secret key. Set the test webhook to:
 
 ```text
-https://YOUR_DOMAIN/api/paystack/webhook
+https://YOUR_DOMAIN/api/webhooks/paymonetra
 ```
 
-The webhook validates the `x-paystack-signature`, verifies the transaction again with Paystack, checks reference, currency and amount, then creates one idempotent wallet credit.
+Set `PAYMONETRA_SECRET_KEY` and the mode-specific `PAYMONETRA_WEBHOOK_SECRET` in Vercel. The webhook validates the raw request body using the `X-Paymonetra-Signature` HMAC-SHA512 signature, verifies the checkout again through `GET /payments/{reference}`, checks merchant reference, paid status, NGN amount and mode, then creates one idempotent wallet credit. Browser redirects are never treated as proof of payment.
+
+Test and live keys, webhook URLs, and webhook secrets are separate. Complete Paymonetra's test checkout outcomes and signed webhook test before replacing the test key with an approved `sk_live_` key. The official API base URL is `https://api.paymonetra.com/v1`.
 
 ## Manual-funding email notifications
 
@@ -115,7 +117,7 @@ Administrators can upload PDF, ZIP, Office, text, CSV, PNG, JPEG, or WebP files 
 3. Set `NEXT_PUBLIC_APP_URL` to the deployed HTTPS origin.
 4. Deploy Firestore rules/indexes.
 5. Create and connect a private Vercel Blob store for marketplace downloads.
-6. Register the production Paystack and Telnyx webhooks.
+6. Register the production Paymonetra and Telnyx webhooks.
 7. Deploy the updated Firestore rules and indexes.
 8. Test Telnyx search and signed webhook delivery with `TELNYX_PURCHASES_ENABLED=false`.
 9. Run payment tests end-to-end, including duplicate-webhook, timeout and refund reconciliation tests.

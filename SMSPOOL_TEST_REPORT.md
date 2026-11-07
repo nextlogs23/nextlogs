@@ -157,7 +157,7 @@ The repository configuration passed static validation. The Firebase CLI did not 
 
 - No `NEXT_PUBLIC_SMSPOOL_*` variable exists.
 - `SMSPOOL_API_KEY` is used only in server code and configuration documentation.
-- The local production client bundle contained zero SMSPool, Telnyx, Paystack or Firebase Admin secret identifiers and no SMSPool provider URL.
+- The local production client bundle contained zero SMSPool, Telnyx, Paymonetra or Firebase Admin secret identifiers and no SMSPool provider URL.
 - Sixteen deployed public JavaScript chunks were scanned with zero SMSPool secret/configuration identifiers or provider API URLs.
 - Protected deployed routes returned `401` without a Firebase bearer token.
 
