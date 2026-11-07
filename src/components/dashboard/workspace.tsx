@@ -136,6 +136,17 @@ type TelnyxNumberOffer = { id: string; phoneNumber: string; countryCode: string;
 type TelnyxOrder = { id?: string; reference: string; phoneNumber: string; countryCode?: string; status: string; retailPriceMinor?: number; providerReference?: string | null; createdAt?: string | null };
 type InboundMessage = { id?: string; from?: string; text: string; receivedAt: string };
 
+function extractVerificationCode(text: string) {
+  const match = text.match(/(?:^|\D)(\d{4,8})(?=\D|$)/);
+  return match?.[1] || null;
+}
+
+function readableActivityDate(value?: string | null) {
+  if (!value) return "Not provided";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
+}
+
 function TelnyxWorkspace() {
   const [countrySearch, setCountrySearch] = useState("");
   const [country, setCountry] = useState("US");
@@ -249,6 +260,8 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
   const [active, setActive] = useState<(SmsPoolOrder & { kind: "one_time" | "rental" }) | null>(null);
   const [messages, setMessages] = useState<InboundMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [buying, setBuying] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [purchaseAttempt, setPurchaseAttempt] = useState<{ offerId: string; idempotencyKey: string } | null>(null);
@@ -268,6 +281,15 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
       .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load number services"))
       .finally(() => setLoading(false));
   }, [isRental]);
+
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDetailsOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [detailsOpen]);
 
   async function chooseCountry(item: SmsPoolCountry) {
     setCountry(item);
@@ -345,7 +367,13 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     }
   }
 
-  async function refresh(item: SmsPoolOrder, kind: "one_time" | "rental") {
+  async function refresh(item: SmsPoolOrder, kind: "one_time" | "rental", openDetails = false) {
+    if (openDetails) {
+      setActive({ ...item, kind });
+      setMessages([]);
+      setDetailsOpen(true);
+    }
+    setDetailsLoading(true);
     try {
       const path = kind === "rental" ? `/api/bloomsms/rentals/${item.reference}` : `/api/bloomsms/orders/${item.reference}`;
       const data = await api<{ number?: string | null; status: string; expiresAt?: string | null; messages: InboundMessage[] }>(path);
@@ -356,6 +384,17 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
       setter((rows) => rows.map((row) => row.reference === item.reference ? next : row));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to refresh order");
+    } finally {
+      setDetailsLoading(false);
+    }
+  }
+
+  async function copyActivityValue(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error(`Unable to copy ${label.toLowerCase()}`);
     }
   }
 
@@ -414,7 +453,41 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
         <div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted messaging. Automated account creation and verification bypass are prohibited.</p></div></div>
       </aside>
     </div>
-    <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td><td><button type="button" onClick={() => refresh(item, item.kind)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
+    <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td><td><button type="button" onClick={() => void refresh(item, item.kind, true)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
+    {detailsOpen && active && <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="number-details-title">
+      <button type="button" className="modal-backdrop" onClick={() => setDetailsOpen(false)} aria-label="Close number details" />
+      <section className="modal-card number-details-modal">
+        <header className="number-details-header">
+          <div className="number-details-heading"><span><MessageSquareText size={20} /></span><div><p className="ui-eyebrow">Number activity</p><h2 id="number-details-title">SMS and order details</h2></div></div>
+          <div className="number-details-header-actions"><Status value={active.status} /><button type="button" onClick={() => setDetailsOpen(false)} aria-label="Close number details"><X size={18} /></button></div>
+        </header>
+        <div className="number-details-body">
+          <div className="number-details-number">
+            <div><small>{active.phoneNumber ? "Assigned phone number" : "Phone number"}</small><strong>{active.phoneNumber || "Awaiting provider assignment"}</strong></div>
+            {active.phoneNumber && <button type="button" onClick={() => void copyActivityValue(active.phoneNumber!, "Phone number")}><Copy size={16} /> Copy number</button>}
+          </div>
+          <div className="number-details-grid">
+            <div><small>Service</small><b>{active.serviceName || active.name || "SMS service"}</b></div>
+            <div><small>Number type</small><b>{active.kind === "rental" ? "Monthly rental" : "Temporary SMS"}</b></div>
+            <div><small>Country</small><b>{active.countryName || "Provider assigned"}</b></div>
+            <div><small>Amount</small><b>{money(active.retailPriceMinor)}</b></div>
+            <div><small>Expires</small><b>{readableActivityDate(active.expiresAt)}</b></div>
+            <div><small>Reference</small><button type="button" onClick={() => void copyActivityValue(active.reference, "Reference")}><span>{active.reference}</span><Copy size={14} /></button></div>
+          </div>
+          <div className="number-message-heading"><div><p className="ui-eyebrow">Received messages</p><h3>SMS inbox</h3></div><button type="button" onClick={() => void refresh(active, active.kind)} disabled={detailsLoading}><LoaderCircle className={detailsLoading ? "animate-spin" : ""} size={15} /> Refresh</button></div>
+          {detailsLoading && !messages.length ? <div className="number-message-loading"><LoaderCircle className="animate-spin" size={22} /><p>Loading the latest SMS details…</p></div> : messages.length ? <div className="number-message-list">{messages.map((message) => {
+            const code = extractVerificationCode(message.text);
+            return <article key={message.id || `${message.receivedAt}-${message.text}`} className="number-message-card">
+              <div className="number-message-meta"><span><Inbox size={15} /> {message.from || "Message provider"}</span><time>{readableActivityDate(message.receivedAt)}</time></div>
+              {code && <div className="number-message-code"><div><small>Verification code</small><strong>{code}</strong></div><button type="button" onClick={() => void copyActivityValue(code, "Verification code")} aria-label={`Copy verification code ${code}`}><Copy size={16} /> Copy code</button></div>}
+              <p>{message.text}</p>
+              <button type="button" className="number-message-copy" onClick={() => void copyActivityValue(message.text, "SMS message")}><Copy size={14} /> Copy full message</button>
+            </article>;
+          })}</div> : <div className="number-message-empty"><span><Inbox size={21} /></span><div><h4>Waiting for SMS</h4><p>No message has been received yet. Refresh this inbox after the sender delivers the code.</p></div></div>}
+        </div>
+        <footer className="number-details-footer"><p>Only genuine provider messages are displayed.</p><button type="button" onClick={() => setDetailsOpen(false)}>Done</button></footer>
+      </section>
+    </div>}
     {confirming && currentOffer && <ConfirmModal title={isRental ? "Confirm monthly rental" : "Confirm temporary number"} busy={buying} onClose={() => !buying && setConfirming(false)} onConfirm={purchase}>
       <p><span>Service</span><b>{isRental ? selectedRental?.name : service?.name}</b></p>
       <p><span>{isRental ? "Rental period" : "Country"}</span><b>{isRental ? `${selectedRental?.days} days` : country?.name}</b></p>

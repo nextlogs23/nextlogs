@@ -67,6 +67,19 @@ test("monthly rentals render recognizable service logos with a safe fallback", a
   assert.match(config, /cdn\.simpleicons\.org/);
 });
 
+test("number activity management opens an accessible SMS details dialog with copy actions", async () => {
+  const [workspace, styles] = await Promise.all([read("src/components/dashboard/workspace.tsx"), read("src/app/globals.css")]);
+  assert.match(workspace, /refresh\(item, item\.kind, true\)/);
+  assert.match(workspace, /aria-modal="true"/);
+  assert.match(workspace, /SMS and order details/);
+  assert.match(workspace, /Verification code/);
+  assert.match(workspace, /Copy code/);
+  assert.match(workspace, /Copy full message/);
+  assert.match(workspace, /navigator\.clipboard\.writeText/);
+  assert.match(styles, /\.number-details-modal/);
+  assert.match(styles, /\.number-message-code/);
+});
+
 test("Firestore denies direct provider-record access and declares user history indexes", async () => {
   const [rules, indexes] = await Promise.all([read("firestore.rules"), read("firestore.indexes.json")]);
   assert.match(rules, /match \/bloomSmsOrders\/\{id\} \{ allow read, write: if false; \}/);
