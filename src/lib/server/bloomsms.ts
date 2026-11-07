@@ -116,7 +116,8 @@ const COUNTRY_CODE_ALIASES: Record<string, string> = {
   "congo democratic republic": "CD", "congo republic": "CG", "ivory coast": "CI", "laos": "LA",
   "micronesia federated states of": "FM", "north macedonia": "MK", palestine: "PS", russia: "RU",
   "south korea": "KR", "north korea": "KP", syria: "SY", taiwan: "TW", tanzania: "TZ",
-  "united kingdom": "GB", "united states": "US", "united states of america": "US", venezuela: "VE",
+  "united kingdom": "GB", "united states": "US", "united states america": "US", "united states of america": "US",
+  "united states usa": "US", us: "US", usa: "US", "u s a": "US", venezuela: "VE",
   vietnam: "VN", "virgin islands british": "VG", "virgin islands us": "VI",
 };
 

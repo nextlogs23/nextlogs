@@ -360,11 +360,15 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
   }
 
   const preferredCountries = ["US", "GB", "DE", "PL", "IT"];
+  const countryCode = (item: SmsPoolCountry) => {
+    const normalized = item.name.toLowerCase().replace(/[^a-z]/g, "");
+    return item.countryCode || (/^(us|usa|unitedstates|unitedstatesofamerica)$/.test(normalized) ? "US" : null);
+  };
   const filteredCountries = countriesList
     .filter((item) => `${item.name} ${item.shortName} ${item.countryCode || ""}`.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => {
-      const aRank = preferredCountries.indexOf(a.countryCode || "");
-      const bRank = preferredCountries.indexOf(b.countryCode || "");
+      const aRank = preferredCountries.indexOf(countryCode(a) || "");
+      const bRank = preferredCountries.indexOf(countryCode(b) || "");
       if (aRank !== -1 || bRank !== -1) return (aRank === -1 ? preferredCountries.length : aRank) - (bRank === -1 ? preferredCountries.length : bRank);
       return a.name.localeCompare(b.name);
     });
@@ -396,7 +400,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
           <div className="workspace-card-title"><span>01</span><div><h2>Country and service</h2><p>Availability is loaded live and never simulated.</p></div></div>
           <label className="country-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search country" /></label>
           <div className="country-grid country-list-scroll">{filteredCountries.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseCountry(item)} className={country?.id === item.id ? "is-selected" : ""}>
-            <span className="country-flag">{item.countryCode ? <Image src={`https://flagcdn.com/w40/${item.countryCode.toLowerCase()}.png`} width={40} height={30} alt={`${item.name} flag`} unoptimized /> : <Globe2 size={19} aria-label="Country flag unavailable" />}</span><div><b>{item.name}</b><small>{item.region}</small></div>{country?.id === item.id && <Check size={14} />}
+            <span className="country-flag">{countryCode(item) === "US" ? <Image src="/flags/us.svg" width={40} height={30} alt="United States flag" /> : countryCode(item) ? <Image src={`https://flagcdn.com/w40/${countryCode(item)?.toLowerCase()}.png`} width={40} height={30} alt={`${item.name} flag`} unoptimized /> : <Globe2 size={19} aria-label="Country flag unavailable" />}</span><div><b>{countryCode(item) === "US" ? "United States" : item.name}</b><small>{countryCode(item) ? `ISO ${countryCode(item)}` : item.region}</small></div>{country?.id === item.id && <Check size={14} />}
           </button>)}</div>
           {country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Only permitted destination services are shown.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label><div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></>}
           {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelected(offer); setPurchaseAttempt(null); }} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}

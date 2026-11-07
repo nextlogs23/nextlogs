@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" role="img" aria-labelledby="title">
+  <title id="title">Flag of the United States</title>
+  <path fill="#fff" d="M0 0h741v390H0z"/>
+  <g fill="#b22234"><path d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z"/></g>
+  <path fill="#3c3b6e" d="M0 0h296.4v210H0z"/>
+  <g fill="#fff">
+    <g id="s18"><g id="s9"><g id="s5"><path id="s" d="m24.7 9 2.94 9.05h9.52l-7.7 5.59 2.94 9.05-7.7-5.59-7.7 5.59 2.94-9.05-7.7-5.59h9.52z"/><use href="#s" x="49.4"/><use href="#s" x="98.8"/><use href="#s" x="148.2"/><use href="#s" x="197.6"/><use href="#s" x="247"/></g><use href="#s5" y="42"/><use href="#s5" y="84"/><use href="#s5" y="126"/><use href="#s5" y="168"/></g><g><use href="#s" x="24.7" y="21"/><use href="#s" x="74.1" y="21"/><use href="#s" x="123.5" y="21"/><use href="#s" x="172.9" y="21"/><use href="#s" x="222.3" y="21"/><use href="#s" x="24.7" y="63"/><use href="#s" x="74.1" y="63"/><use href="#s" x="123.5" y="63"/><use href="#s" x="172.9" y="63"/><use href="#s" x="222.3" y="63"/><use href="#s" x="24.7" y="105"/><use href="#s" x="74.1" y="105"/><use href="#s" x="123.5" y="105"/><use href="#s" x="172.9" y="105"/><use href="#s" x="222.3" y="105"/><use href="#s" x="24.7" y="147"/><use href="#s" x="74.1" y="147"/><use href="#s" x="123.5" y="147"/><use href="#s" x="172.9" y="147"/><use href="#s" x="222.3" y="147"/></g></g>
+  </g>
+</svg>

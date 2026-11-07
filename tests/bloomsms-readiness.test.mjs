@@ -52,7 +52,9 @@ test("live countries include real ISO-derived flag images with a neutral fallbac
   assert.match(workspace, /https:\/\/flagcdn\.com\/w40\//);
   assert.match(workspace, /alt=\{`\$\{item\.name\} flag`\}/);
   assert.match(workspace, /preferredCountries = \["US", "GB", "DE", "PL", "IT"\]/);
-  assert.match(workspace, /preferredCountries\.indexOf\(a\.countryCode/);
+  assert.match(workspace, /preferredCountries\.indexOf\(countryCode\(a\)/);
+  assert.match(workspace, /src="\/flags\/us\.svg"/);
+  assert.match(provider, /usa: "US"/);
 });
 
 test("monthly rentals render recognizable service logos with a safe fallback", async () => {
