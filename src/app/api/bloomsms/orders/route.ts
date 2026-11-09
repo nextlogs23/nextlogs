@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await requireUser(request);
     const snapshot = await adminDb().collection("bloomSmsOrders").where("userId", "==", user.uid).orderBy("createdAt", "desc").limit(50).get();
-    return Response.json({ orders: snapshot.docs.map((doc) => { const data = doc.data(); return { id: doc.id, reference: data.reference, phoneNumber: data.phoneNumber || null, countryName: data.countryName || null, serviceName: data.serviceName || null, status: data.status, retailPriceMinor: data.retailPriceMinor, expiresAt: iso(data.expiresAt), createdAt: iso(data.createdAt) }; }) });
+    return Response.json({ orders: snapshot.docs.map((doc) => { const data = doc.data(); return { id: doc.id, reference: data.reference, phoneNumber: data.phoneNumber || null, countryName: data.countryName || null, serviceName: data.serviceName || null, status: data.status, refundStatus: data.refundStatus || null, retailPriceMinor: data.retailPriceMinor, expiresAt: iso(data.expiresAt), createdAt: iso(data.createdAt) }; }) });
   } catch (error) { return routeError(error); }
 }
 

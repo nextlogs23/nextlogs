@@ -96,6 +96,29 @@ test("social media SMS has a dedicated live BloomSMS catalogue experience", asyn
   assert.match(home, /href: "\/dashboard\/social-sms"/);
 });
 
+test("expired no-code orders expose an idempotent provider-confirmed refund application", async () => {
+  const [route, workspace, wallet, styles, adminRoute, adminWorkspace] = await Promise.all([
+    read("src/app/api/bloomsms/orders/[reference]/route.ts"),
+    read("src/components/dashboard/workspace.tsx"),
+    read("src/lib/server/wallet.ts"),
+    read("src/app/globals.css"),
+    read("src/app/api/admin/bloomsms/orders/route.ts"),
+    read("src/components/admin/admin-workspace.tsx"),
+  ]);
+  assert.match(route, /REFUND_COUNTDOWN_ACTIVE/);
+  assert.match(route, /SMS_ALREADY_RECEIVED/);
+  assert.match(route, /providerConfirmedCancellation/);
+  assert.match(route, /refundStatus: "pending_provider"/);
+  assert.match(route, /finalizePurchaseRefund/);
+  assert.match(wallet, /refundSnapshot\.exists/);
+  assert.match(workspace, /smsWaitCountdown/);
+  assert.match(workspace, /Apply for refund/);
+  assert.match(workspace, /requestRefund/);
+  assert.match(styles, /\.sms-refund-panel/);
+  assert.match(adminRoute, /refundStatus: data\.refundStatus/);
+  assert.match(adminWorkspace, /Refund:/);
+});
+
 test("Firestore denies direct provider-record access and declares user history indexes", async () => {
   const [rules, indexes] = await Promise.all([read("firestore.rules"), read("firestore.indexes.json")]);
   assert.match(rules, /match \/bloomSmsOrders\/\{id\} \{ allow read, write: if false; \}/);

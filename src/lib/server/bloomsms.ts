@@ -193,7 +193,7 @@ export async function checkBloomActivation(activationId: string) {
 }
 
 export async function updateBloomActivation(activationId: string, status: "cancel" | "complete" | "request_another_sms") {
-  return request<{ activation_id?: string | number; activation_status?: string; status?: string; refund_amount?: string; phone_number?: string }>(`/activations/${encodeURIComponent(activationId)}`, { method: "PATCH", body: { status } });
+  return request<{ activation_id?: string | number; activation_status?: string; status?: string; refund_amount?: string | number; phone_number?: string }>(`/activations/${encodeURIComponent(activationId)}`, { method: "PATCH", body: { status } });
 }
 
 export async function bloomRentalOffers(): Promise<BloomRentalOffer[]> {

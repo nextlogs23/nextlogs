@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request); const db = adminDb();
     const [orders, rentals] = await Promise.all([db.collection("bloomSmsOrders").orderBy("createdAt", "desc").limit(100).get(), db.collection("bloomSmsRentals").orderBy("createdAt", "desc").limit(100).get()]);
-    const shape = (kind: string) => (doc: FirebaseFirestore.QueryDocumentSnapshot) => { const data = doc.data(); return { id: doc.id, kind, reference: data.reference, userId: data.userId, phoneNumber: data.phoneNumber || null, serviceName: data.serviceName || data.name || null, status: data.status, retailPriceMinor: data.retailPriceMinor, providerCostMinor: data.providerCostMinor, providerReference: data.providerReference || null, expiresAt: iso(data.expiresAt), createdAt: iso(data.createdAt) }; };
+    const shape = (kind: string) => (doc: FirebaseFirestore.QueryDocumentSnapshot) => { const data = doc.data(); return { id: doc.id, kind, reference: data.reference, userId: data.userId, phoneNumber: data.phoneNumber || null, serviceName: data.serviceName || data.name || null, status: data.status, refundStatus: data.refundStatus || null, retailPriceMinor: data.retailPriceMinor, providerCostMinor: data.providerCostMinor, providerReference: data.providerReference || null, expiresAt: iso(data.expiresAt), createdAt: iso(data.createdAt) }; };
     return Response.json({ orders: [...orders.docs.map(shape("one_time")), ...rentals.docs.map(shape("rental"))].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))) });
   } catch (error) { return routeError(error); }
 }

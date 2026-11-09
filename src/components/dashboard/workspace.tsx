@@ -29,6 +29,7 @@ import {
   PhoneCall,
   Plus,
   ReceiptText,
+  RotateCcw,
   Search,
   Send,
   ShieldCheck,
@@ -103,7 +104,7 @@ function RentalBrandLogo({ serviceName }: { serviceName: string }) {
 
 function Status({ value = "pending" }: { value?: string }) {
   const status = value.toLowerCase();
-  const cls = status === "successful" || status === "received" || status === "completed" ? "ui-badge-success" : status === "failed" || status === "cancelled" || status === "expired" ? "ui-badge-danger" : "ui-badge-warning";
+  const cls = status === "successful" || status === "received" || status === "completed" || status === "refunded" ? "ui-badge-success" : status === "failed" || status === "cancelled" || status === "expired" ? "ui-badge-danger" : "ui-badge-warning";
   return <span className={`ui-badge ${cls}`}>{status === "successful" || status === "received" ? <BadgeCheck size={11} /> : status === "failed" ? <CircleAlert size={11} /> : <Clock3 size={11} />}{status.replaceAll("_", " ")}</span>;
 }
 
@@ -231,7 +232,19 @@ type SmsPoolCountry = { id: string; name: string; shortName: string; countryCode
 type SmsPoolService = { id: string; name: string };
 type SmsPoolOffer = { id: string; poolId: number; poolName: string; stock: number; retailPriceMinor: number; expiresAt: string };
 type SmsPoolRentalOffer = { id: string; rentalId: string; name: string; region: string; days: number; refundable: boolean; refundWithinHours: number; retailPriceMinor: number; expiresAt: string };
-type SmsPoolOrder = { id?: string; reference: string; phoneNumber?: string | null; countryName?: string | null; serviceName?: string | null; name?: string; days?: number; status: string; retailPriceMinor?: number; expiresAt?: string | null };
+type SmsPoolOrder = { id?: string; reference: string; phoneNumber?: string | null; countryName?: string | null; serviceName?: string | null; name?: string; days?: number; status: string; refundStatus?: string | null; retailPriceMinor?: number; expiresAt?: string | null; createdAt?: string | null };
+
+function smsWaitCountdown(expiresAt: string | null | undefined, now: number) {
+  if (!expiresAt) return { expired: false, label: "Waiting time unavailable", milliseconds: Number.POSITIVE_INFINITY };
+  const expires = new Date(expiresAt).getTime();
+  if (Number.isNaN(expires)) return { expired: false, label: "Waiting time unavailable", milliseconds: Number.POSITIVE_INFINITY };
+  const milliseconds = Math.max(0, expires - now);
+  if (milliseconds === 0) return { expired: true, label: "Refund application available", milliseconds: 0 };
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return { expired: false, label: `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`, milliseconds };
+}
 
 // Kept temporarily for migration compatibility with older dashboard bundles.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -264,6 +277,8 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
   const [loading, setLoading] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [refundBusy, setRefundBusy] = useState(false);
+  const [clock, setClock] = useState(() => Date.now());
   const [buying, setBuying] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [purchaseAttempt, setPurchaseAttempt] = useState<{ offerId: string; idempotencyKey: string } | null>(null);
@@ -292,6 +307,12 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [detailsOpen]);
+
+  useEffect(() => {
+    if (isRental) return;
+    const timer = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [isRental]);
 
   async function chooseCountry(item: SmsPoolCountry) {
     setCountry(item);
@@ -378,8 +399,8 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
     setDetailsLoading(true);
     try {
       const path = kind === "rental" ? `/api/bloomsms/rentals/${item.reference}` : `/api/bloomsms/orders/${item.reference}`;
-      const data = await api<{ number?: string | null; status: string; expiresAt?: string | null; messages: InboundMessage[] }>(path);
-      const next = { ...item, phoneNumber: data.number, status: data.status, expiresAt: data.expiresAt, kind };
+      const data = await api<{ number?: string | null; status: string; refundStatus?: string | null; expiresAt?: string | null; messages: InboundMessage[] }>(path);
+      const next = { ...item, phoneNumber: data.number, status: data.status, refundStatus: data.refundStatus ?? item.refundStatus, expiresAt: data.expiresAt, kind };
       setActive(next);
       setMessages(data.messages);
       const setter = kind === "rental" ? setRentals : setOrders;
@@ -397,6 +418,23 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
       toast.success(`${label} copied`);
     } catch {
       toast.error(`Unable to copy ${label.toLowerCase()}`);
+    }
+  }
+
+  async function requestRefund() {
+    if (!active || active.kind !== "one_time") return;
+    setRefundBusy(true);
+    try {
+      const result = await api<{ status: string; refundStatus: string; message?: string }>(`/api/bloomsms/orders/${active.reference}`, { method: "DELETE" });
+      const next = { ...active, status: result.status, refundStatus: result.refundStatus };
+      setActive(next);
+      setOrders((rows) => rows.map((row) => row.reference === active.reference ? next : row));
+      if (result.refundStatus === "approved") toast.success("Refund approved. Your wallet has been credited.");
+      else toast.info(result.message || "Refund request submitted for provider confirmation.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to submit refund request");
+    } finally {
+      setRefundBusy(false);
     }
   }
 
@@ -418,6 +456,10 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
   const rows = isRental
     ? rentals.map((item) => ({ ...item, kind: "rental" as const }))
     : orders.map((item) => ({ ...item, kind: "one_time" as const }));
+  const activeCountdown = active?.kind === "one_time" ? smsWaitCountdown(active.expiresAt, clock) : null;
+  const activeRefundPending = active?.refundStatus === "pending_provider" || active?.refundStatus === "requested";
+  const activeRefunded = active?.refundStatus === "approved" || active?.status === "refunded" || active?.status === "cancelled";
+  const activeHasSms = messages.length > 0 || active?.status === "received" || active?.status === "completed";
 
   return <>
     <PageHeader
@@ -457,7 +499,7 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
         <div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted messaging. Automated account creation and verification bypass are prohibited.</p></div></div>
       </aside>
     </div>
-    <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th><th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td><td><button type="button" onClick={() => void refresh(item, item.kind, true)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
+    <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th>{!isRental && <th>SMS wait</th>}<th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td>{!isRental && <td><span className={`sms-countdown-chip ${smsWaitCountdown(item.expiresAt, clock).expired ? "is-expired" : ""}`}><Clock3 size={13} /> {item.refundStatus === "approved" ? "Refunded" : item.refundStatus === "pending_provider" ? "Refund pending" : smsWaitCountdown(item.expiresAt, clock).label}</span></td>}<td><button type="button" onClick={() => void refresh(item, item.kind, true)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
     {detailsOpen && active && <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="number-details-title">
       <button type="button" className="modal-backdrop" onClick={() => setDetailsOpen(false)} aria-label="Close number details" />
       <section className="modal-card number-details-modal">
@@ -477,6 +519,7 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
             <div><small>Amount</small><b>{money(active.retailPriceMinor)}</b></div>
             <div><small>Expires</small><b>{readableActivityDate(active.expiresAt)}</b></div>
             <div><small>Reference</small><button type="button" onClick={() => void copyActivityValue(active.reference, "Reference")}><span>{active.reference}</span><Copy size={14} /></button></div>
+            {active.kind === "one_time" && <div><small>Refund countdown</small><b>{activeRefunded ? "Refund completed" : activeRefundPending ? "Awaiting provider" : activeCountdown?.label}</b></div>}
           </div>
           <div className="number-message-heading"><div><p className="ui-eyebrow">Received messages</p><h3>SMS inbox</h3></div><button type="button" onClick={() => void refresh(active, active.kind)} disabled={detailsLoading}><LoaderCircle className={detailsLoading ? "animate-spin" : ""} size={15} /> Refresh</button></div>
           {detailsLoading && !messages.length ? <div className="number-message-loading"><LoaderCircle className="animate-spin" size={22} /><p>Loading the latest SMS details…</p></div> : messages.length ? <div className="number-message-list">{messages.map((message) => {
@@ -488,6 +531,11 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
               <button type="button" className="number-message-copy" onClick={() => void copyActivityValue(message.text, "SMS message")}><Copy size={14} /> Copy full message</button>
             </article>;
           })}</div> : <div className="number-message-empty"><span><Inbox size={21} /></span><div><h4>Waiting for SMS</h4><p>No message has been received yet. Refresh this inbox after the sender delivers the code.</p></div></div>}
+          {active.kind === "one_time" && <section className={`sms-refund-panel ${activeCountdown?.expired ? "is-ready" : ""}`}>
+            <div className="sms-refund-panel-icon"><Clock3 size={19} /></div>
+            <div className="sms-refund-panel-copy"><small>No-code protection</small><h4>{activeRefunded ? "Refund completed" : activeRefundPending ? "Refund under provider review" : activeHasSms ? "SMS received" : activeCountdown?.expired ? "You can apply for a refund" : "Waiting period in progress"}</h4><p>{activeRefunded ? "The confirmed refund has been returned to your wallet." : activeRefundPending ? "Your request is recorded. Wallet credit will happen only after the provider confirms cancellation." : activeHasSms ? "This order received an SMS and is not eligible for a no-code refund." : activeCountdown?.expired ? "No SMS was received before the timer ended. Submit a request for provider verification." : `You can apply if no SMS arrives before the countdown ends. Time remaining: ${activeCountdown?.label}.`}</p></div>
+            {!activeRefunded && !activeRefundPending && !activeHasSms && activeCountdown?.expired && <button type="button" disabled={refundBusy} onClick={() => void requestRefund()}>{refundBusy ? <LoaderCircle className="animate-spin" size={15} /> : <RotateCcw size={15} />} Apply for refund</button>}
+          </section>}
         </div>
         <footer className="number-details-footer"><p>Only genuine provider messages are displayed.</p><button type="button" onClick={() => setDetailsOpen(false)}>Done</button></footer>
       </section>
