@@ -72,3 +72,15 @@ test("wallet page reconciles recent pending deposits when a webhook or redirect 
   assert.match(verify, /reconcilePaymonetraFundingsForUser\(user\.uid\)/);
   assert.match(workspace, /reference \? \{ reference \} : \{\}/);
 });
+
+test("recent activity includes wallet funding without duplicating service purchases", () => {
+  const route = read("src/app/api/transactions/route.ts");
+  const dashboard = read("src/components/dashboard/dashboard-home.tsx");
+  assert.match(route, /customerCollection\("walletTransactions", user\.uid\)/);
+  assert.match(route, /ledgerServiceType/);
+  assert.match(route, /wallet_funding/);
+  assert.match(route, /if \(rows\.has\(reference\)\) continue/);
+  assert.match(route, /createdAt: iso\(data\.createdAt\)/);
+  assert.match(dashboard, /item\.kind === "purchase"/);
+  assert.match(dashboard, /successfulPurchases/);
+});

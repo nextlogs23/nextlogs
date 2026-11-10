@@ -6,7 +6,7 @@ import { ArrowRight, BadgeCheck, BarChart3, Bolt, CalendarDays, ChevronRight, Ci
 import { auth } from "@/lib/firebase/client";
 import { api } from "@/lib/api-client";
 
-type Transaction = { id: string; reference?: string; serviceType?: string; amountMinor?: number; retailPriceMinor?: number; status?: string; createdAt?: string | { seconds?: number } };
+type Transaction = { id: string; reference?: string; serviceType?: string; amountMinor?: number; retailPriceMinor?: number; status?: string; kind?: string; createdAt?: string | { seconds?: number } };
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const services = [
   { name: "SMS verification", copy: "Receive real provider messages", href: "/dashboard/sms", icon: MessageSquareText, color: "sky" },
@@ -56,10 +56,11 @@ export function DashboardHome() {
 
   const successful = useMemo(() => transactions.filter(item => item.status?.toLowerCase() === "successful"), [transactions]);
   const pending = useMemo(() => transactions.filter(item => ["pending", "processing"].includes(item.status?.toLowerCase() || "")), [transactions]);
-  const spent = useMemo(() => successful.reduce((sum, item) => sum + (item.retailPriceMinor ?? item.amountMinor ?? 0), 0), [successful]);
+  const successfulPurchases = useMemo(() => successful.filter((item) => item.kind === "purchase"), [successful]);
+  const spent = useMemo(() => successfulPurchases.reduce((sum, item) => sum + Math.max(0, item.retailPriceMinor ?? item.amountMinor ?? 0), 0), [successfulPurchases]);
   const activity = useMemo(() => {
     const totals = new Map<string, number>();
-    transactions.forEach(item => { const key = item.serviceType?.replaceAll("_", " ") || "Wallet"; totals.set(key, (totals.get(key) || 0) + (item.retailPriceMinor ?? item.amountMinor ?? 0)); });
+    transactions.filter((item) => item.kind === "purchase").forEach(item => { const key = item.serviceType?.replaceAll("_", " ") || "Service"; totals.set(key, (totals.get(key) || 0) + Math.max(0, item.retailPriceMinor ?? item.amountMinor ?? 0)); });
     return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
   }, [transactions]);
 
