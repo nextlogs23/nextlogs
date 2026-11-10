@@ -50,7 +50,7 @@ const customerMobileNav: NavItem[] = [
 ];
 
 const adminNav: NavItem[] = [
-  ["Overview", "", Gauge], ["Users", "users", Users], ["Marketplace", "marketplace", Store], ["SMS orders", "sms-orders", MessageSquareText],
+  ["Overview", "", Gauge], ["Users", "users", Users], ["Marketplace", "marketplace", Store], ["AccsZone review", "accszone", Shield], ["SMS orders", "sms-orders", MessageSquareText],
   ["Airtime orders", "airtime-orders", PhoneCall], ["Data orders", "data-orders", Smartphone], ["Electricity", "electricity-orders", Bolt], ["Cable TV", "cable-orders", Tv],
   ["Wallet activity", "wallet-transactions", WalletCards], ["API providers", "providers", Activity], ["Pricing", "pricing", Settings],
   ["Analytics", "analytics", ChartNoAxesCombined], ["Notifications", "notifications", Bell], ["Settings", "settings", Settings],

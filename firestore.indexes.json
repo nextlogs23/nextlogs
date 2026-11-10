@@ -12,5 +12,7 @@
     {"collectionGroup":"walletTransactions","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]},
     {"collectionGroup":"manualFundingRequests","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]}
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {"collectionGroup":"accsZoneCatalogueCache","fieldPath":"expiresAt","ttl":true}
+  ]
 }

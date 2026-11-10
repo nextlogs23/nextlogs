@@ -4,8 +4,9 @@ export const marketplaceCategories = ["social_assets", "digital_products"] as co
 export const marketplaceKinds = ["download", "template", "subscription", "service"] as const;
 export const marketplaceFulfillment = ["instant", "manual"] as const;
 
-const prohibitedCredentialLanguage = /\b(aged\s+accounts?|verified\s+accounts?|account\s+logins?|passwords?|session\s+tokens?|browser\s+cookies?|verification\s+bypass|kyc\s+bypass|stolen\s+(?:accounts?|credentials?|data)|hacked\s+(?:accounts?|credentials?|data))\b/i;
+const prohibitedCredentialLanguage = /\b(aged\s+accounts?|verified\s+accounts?|account\s+logins?|passwords?|session\s+tokens?|browser\s+cookies?|recovery\s+(?:codes?|info)|verification\s+bypass|kyc\s+bypass|stolen\s+(?:accounts?|credentials?|data)|hacked\s+(?:accounts?|credentials?|data))\b/i;
 const prohibitedEngagementLanguage = /\b(?:buy|sell|purchase|instant|guaranteed|cheap|bulk|bot|fake)\s+(?:social\s+media\s+)?(?:followers?|likes?|views?|engagement)|\b(?:followers?|likes?|views?|engagement)\s+(?:packages?|bots?|for\s+sale)\b|\b\d[\d,.]*\+?\s+(?:followers?|likes?|views?)\b/i;
+const prohibitedAccsZoneLanguage = /\b(?:proxy|proxies|vpn|vps|rdp|iptv|leads?|contact\s+databases?)\b/i;
 
 export function marketplaceProductRestriction(...values: string[]) {
   if (values.some((value) => prohibitedCredentialLanguage.test(value))) {
@@ -13,6 +14,9 @@ export function marketplaceProductRestriction(...values: string[]) {
   }
   if (values.some((value) => prohibitedEngagementLanguage.test(value))) {
     return "Remove claims offering followers, likes, views, bots, or other artificial engagement before publishing.";
+  }
+  if (values.some((value) => prohibitedAccsZoneLanguage.test(value))) {
+    return "Remove references to proxies, VPN/VPS/RDP, IPTV, leads, or contact databases before publishing.";
   }
   return null;
 }

@@ -55,6 +55,8 @@ service cloud.firestore {
     match /notifications/{id} { allow read, write: if false; }
     match /adminAuditLogs/{id} { allow read, write: if false; }
     match /rateLimits/{id} { allow read, write: if false; }
+    match /accsZoneCatalogueCache/{id} { allow read, write: if false; }
+    match /accsZoneAllowlist/{id} { allow read, write: if false; }
     match /{document=**} { allow read, write: if false; }
   }
 }
