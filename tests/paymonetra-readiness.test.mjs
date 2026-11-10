@@ -26,6 +26,10 @@ test("wallet checkout uses authenticated idempotent Paymonetra payments", () => 
   assert.match(provider, /input\.amountMinor \/ 100/);
   assert.match(provider, /reference: input\.reference/);
   assert.match(provider, /redirect_url: input\.redirectUrl/);
+  assert.match(route, /https:\/\/www\.nextlogs\.online/);
+  assert.match(route, /checkoutReturnUrl\(request\)/);
+  assert.match(route, /x-forwarded-host/);
+  assert.doesNotMatch(route, /redirectUrl: `\$\{appUrl\}/);
 });
 
 test("signed webhooks are verified over raw bytes and payments are re-queried", () => {
