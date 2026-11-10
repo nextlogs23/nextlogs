@@ -37,9 +37,11 @@ test("signed webhooks are verified over raw bytes and payments are re-queried", 
   assert.match(webhook, /event\.event !== "collection\.success"/);
   assert.match(webhook, /event\.data\.amount \* 100/);
   assert.match(settlement, /getPaymonetraPayment/);
-  assert.match(settlement, /payment\.status === "paid"/);
+  assert.match(settlement, /providerStatus === "paid"/);
   assert.match(settlement, /payment\.merchant_reference === intent\.reference/);
   assert.match(settlement, /amountRequested === intent\.amountMinor/);
+  assert.match(settlement, /eventAmountMatchesProvider/);
+  assert.doesNotMatch(settlement, /actualAmount === intent\.amountMinor/);
   assert.match(settlement, /Math\.round\(amount \* 100\)/);
   assert.match(settlement, /currency === "NGN"/);
 });
@@ -53,4 +55,16 @@ test("wallet credit is idempotent and redirects are verified server-side", () =>
   assert.match(verify, /requireUser\(request\)/);
   assert.match(verify, /expectedUserId: user\.uid/);
   assert.match(workspace, /\/api\/wallet\/fund\/verify/);
+});
+
+test("wallet page reconciles recent pending deposits when a webhook or redirect is missed", () => {
+  const settlement = read("src/lib/server/paymonetra-funding.ts");
+  const verify = read("src/app/api/wallet/fund/verify/route.ts");
+  const workspace = read("src/components/dashboard/workspace.tsx");
+  assert.match(settlement, /reconcilePaymonetraFundingsForUser/);
+  assert.match(settlement, /where\("userId", "==", uid\)/);
+  assert.match(settlement, /\.slice\(0, 5\)/);
+  assert.match(verify, /reference: z\.string\(\)\.trim\(\)\.min\(8\)\.max\(160\)\.optional\(\)/);
+  assert.match(verify, /reconcilePaymonetraFundingsForUser\(user\.uid\)/);
+  assert.match(workspace, /reference \? \{ reference \} : \{\}/);
 });

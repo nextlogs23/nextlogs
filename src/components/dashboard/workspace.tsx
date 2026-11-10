@@ -616,20 +616,23 @@ function ManualFundingPanel() {
 
 function WalletWorkspace() {
   const [balance, setBalance] = useState(0); const [amount, setAmount] = useState(""); const [loading, setLoading] = useState(false);
-  useEffect(() => { api<{ balanceMinor: number }>("/api/wallet").then(data => setBalance(data.balanceMinor)).catch(() => {}); }, []);
   useEffect(() => {
     const reference = new URLSearchParams(window.location.search).get("reference");
-    if (!reference) return;
-    api<{ status: string }>("/api/wallet/fund/verify", { method: "POST", body: JSON.stringify({ reference }) })
+    api<{ status: string; credited?: number; reviewRequired?: number }>("/api/wallet/fund/verify", { method: "POST", body: JSON.stringify(reference ? { reference } : {}) })
       .then(async (result) => {
-        if (result.status === "successful") {
-          toast.success("Payment confirmed. Your wallet has been credited.");
+        if (result.status === "successful" || (result.credited || 0) > 0) {
+          toast.success(reference ? "Payment confirmed. Your wallet has been credited." : "A confirmed deposit was recovered and credited to your wallet.");
+        } else if (reference && result.status === "pending") toast.info("Your payment is still being confirmed.");
+        else if (reference && (result.reviewRequired || 0) > 0) toast.info("Your payment is being reviewed securely.");
+      })
+      .catch((error) => { if (reference) toast.error(error instanceof Error ? error.message : "Unable to confirm payment"); })
+      .finally(async () => {
+        try {
           const wallet = await api<{ balanceMinor: number }>("/api/wallet");
           setBalance(wallet.balanceMinor);
-        } else toast.info("Your payment is still being confirmed.");
-      })
-      .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to confirm payment"))
-      .finally(() => { window.history.replaceState({}, "", window.location.pathname); });
+        } catch {}
+        if (reference) window.history.replaceState({}, "", window.location.pathname);
+      });
   }, []);
   async function fund(event: FormEvent) { event.preventDefault(); setLoading(true); try { const result = await api<{ authorizationUrl: string }>("/api/wallet/fund", { method: "POST", body: JSON.stringify({ amountMinor: Math.round(Number(amount) * 100) }) }); window.location.assign(result.authorizationUrl); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to initialize payment"); setLoading(false); } }
   return <><PageHeader eyebrow="Digital wallet" title="Your wallet" copy="Fund securely through Paymonetra or submit a bank transfer for review." /><section className="wallet-grid"><div className="premium-wallet"><div className="flex items-start justify-between"><div><p>Available balance</p><h2>{money(balance)}</h2></div><WalletCards /></div><div className="mt-auto flex items-end justify-between"><div><small>ACCOUNT HOLDER</small><b>{auth.currentUser?.displayName || "Nextlogs user"}</b></div><span>•••• {auth.currentUser?.uid.slice(-4).toUpperCase() || "0000"}</span></div></div><form onSubmit={fund} className="ui-card p-5 sm:p-6"><p className="ui-eyebrow">Instant funding</p><h2 className="mt-2 text-xl font-black">Pay securely online</h2><p className="mt-2 text-xs text-[var(--muted)]">You&apos;ll continue to Paymonetra&apos;s secure checkout to complete a bank transfer.</p><label className="ui-label mt-6">Amount<div className="wallet-amount-input"><span>₦</span><input required min="100" type="number" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0.00" /></div></label><div className="amount-options mt-3">{[2000, 5000, 10000, 20000].map(value => <button type="button" key={value} onClick={() => setAmount(String(value))} className={amount === String(value) ? "is-selected" : ""}>₦{value.toLocaleString()}</button>)}</div><button disabled={loading} className="ui-button-primary mt-5 w-full">{loading ? <LoaderCircle className="animate-spin" size={16} /> : <CreditCard size={16} />} Continue to Paymonetra</button></form></section><ManualFundingPanel /><div className="mt-5"><TransactionsTable kind="all" /></div></>;

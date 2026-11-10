@@ -9,8 +9,10 @@ type FundingIntent = {
   reference: string;
   userId: string;
   amountMinor: number;
+  provider?: string;
   providerReference?: string | null;
   status?: string;
+  createdAt?: { toMillis?: () => number } | null;
 };
 
 function nairaAsMinor(value: unknown) {
@@ -41,25 +43,29 @@ export async function settlePaymonetraFunding(input: {
   const actualAmount = nairaAsMinor(payment.amount);
   const currency = String(payment.currency || input.eventCurrency || "NGN").toUpperCase();
   const mode = String(payment.mode || input.eventMode || paymonetraMode()).toLowerCase();
+  const providerStatus = String(payment.status || "pending").toLowerCase();
+  const eventAmountMatchesProvider = input.eventAmountMinor === undefined
+    || (actualAmount !== null && input.eventAmountMinor === actualAmount);
   const valid = payment.reference === input.providerReference
     && payment.merchant_reference === intent.reference
-    && payment.status === "paid"
+    && providerStatus === "paid"
     && amountRequested === intent.amountMinor
-    && actualAmount === intent.amountMinor
-    && (input.eventAmountMinor === undefined || input.eventAmountMinor === intent.amountMinor)
+    && actualAmount !== null
+    && eventAmountMatchesProvider
     && currency === "NGN"
     && mode === paymonetraMode();
 
   if (!valid) {
     await intentRef.set({
-      status: payment.status === "paid" ? "review_required" : payment.status || "pending",
-      verificationFailure: payment.status === "paid" ? "Payment details did not match the wallet funding intent" : null,
-      providerStatus: payment.status || null,
+      status: providerStatus === "paid" ? "review_required" : providerStatus,
+      verificationFailure: providerStatus === "paid" ? "Payment details did not match the wallet funding intent" : null,
+      providerStatus,
       providerAmountMinor: actualAmount,
+      providerAmountRequestedMinor: amountRequested,
       verifiedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    if (payment.status === "paid") throw Object.assign(new Error("Payment requires manual review before wallet credit"), { status: 409 });
-    return { status: payment.status || "pending", reference: intent.reference, idempotent: false };
+    if (providerStatus === "paid") throw Object.assign(new Error("Payment requires manual review before wallet credit"), { status: 409 });
+    return { status: providerStatus, reference: intent.reference, idempotent: false };
   }
 
   const result = await applyWalletEntry({
@@ -70,6 +76,40 @@ export async function settlePaymonetraFunding(input: {
     description: "Paymonetra wallet funding",
     providerReference: input.providerReference,
   });
-  await intentRef.set({ status: "successful", providerStatus: payment.status, verifiedAt: FieldValue.serverTimestamp() }, { merge: true });
+  await intentRef.set({
+    status: "successful",
+    providerStatus,
+    providerAmountMinor: actualAmount,
+    providerAmountRequestedMinor: amountRequested,
+    verificationFailure: FieldValue.delete(),
+    verifiedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
   return { status: "successful" as const, reference: intent.reference, idempotent: result.idempotent };
+}
+
+export async function reconcilePaymonetraFundingsForUser(uid: string) {
+  const snapshot = await adminDb().collection("walletFundingIntents").where("userId", "==", uid).limit(100).get();
+  const candidates = snapshot.docs
+    .map((doc) => doc.data() as FundingIntent)
+    .filter((intent) => intent.provider === "paymonetra" && intent.providerReference && intent.status !== "successful")
+    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+    .slice(0, 5);
+
+  const outcomes = await Promise.all(candidates.map(async (intent) => {
+    try {
+      const result = await settlePaymonetraFunding({ providerReference: intent.providerReference!, expectedUserId: uid });
+      if (result.status === "successful" && !result.idempotent) return "credited" as const;
+      if (result.status !== "successful") return "pending" as const;
+      return "unchanged" as const;
+    } catch (error) {
+      return (error as { status?: number }).status === 409 ? "review_required" as const : "pending" as const;
+    }
+  }));
+
+  return {
+    checked: candidates.length,
+    credited: outcomes.filter((outcome) => outcome === "credited").length,
+    pending: outcomes.filter((outcome) => outcome === "pending").length,
+    reviewRequired: outcomes.filter((outcome) => outcome === "review_required").length,
+  };
 }
