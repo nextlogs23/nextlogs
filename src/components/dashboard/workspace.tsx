@@ -275,6 +275,7 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
   const [active, setActive] = useState<(SmsPoolOrder & { kind: "one_time" | "rental" }) | null>(null);
   const [messages, setMessages] = useState<InboundMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [refundBusy, setRefundBusy] = useState(false);
@@ -300,13 +301,16 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
   }, [isRental]);
 
   useEffect(() => {
-    if (!detailsOpen) return;
+    if (!detailsOpen && !activityOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDetailsOpen(false);
+      if (event.key === "Escape") {
+        setDetailsOpen(false);
+        setActivityOpen(false);
+      }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [detailsOpen]);
+  }, [activityOpen, detailsOpen]);
 
   useEffect(() => {
     if (isRental) return;
@@ -472,7 +476,11 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
         : "Choose a country and permitted service. A live number is assigned only after the order succeeds."}
       action={<Link href="/dashboard/transactions" className="ui-button-secondary"><History size={15} /> Purchase history</Link>}
     />
-    <section className="ui-card mt-5 overflow-hidden"><div className="table-toolbar"><div><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>{rows.length ? <div className="overflow-x-auto"><table className="premium-table"><thead><tr><th>Number / product</th><th>Type</th><th>Status</th><th>Price</th>{!isRental && <th>SMS wait</th>}<th>Action</th></tr></thead><tbody>{rows.map((item) => <tr key={item.reference}><td className="font-extrabold">{item.phoneNumber || item.serviceName || item.name || "Awaiting assignment"}</td><td>{isRental ? "Monthly rental" : "Temporary SMS"}</td><td><Status value={item.status} /></td><td>{money(item.retailPriceMinor)}</td>{!isRental && <td><span className={`sms-countdown-chip ${smsWaitCountdown(item.expiresAt, clock).expired ? "is-expired" : ""}`}><Clock3 size={13} /> {item.refundStatus === "approved" ? "Refunded" : item.refundStatus === "pending_provider" ? "Refund pending" : smsWaitCountdown(item.expiresAt, clock).label}</span></td>}<td><button type="button" onClick={() => void refresh(item, item.kind, true)} className="ui-button-secondary">Manage <ChevronRight size={14} /></button></td></tr>)}</tbody></table></div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals" : "No temporary number orders"} copy="Your completed and active orders will appear here." />}</section>
+    <section className="number-activity-launcher">
+      <span className="number-activity-launcher-icon"><MessageSquareText size={22} /></span>
+      <div className="number-activity-launcher-copy"><p className="ui-eyebrow">Number activity</p><h2>{isRental ? "Monthly rentals" : "Temporary number orders"}</h2><p>{rows.length ? `${rows.length} ${rows.length === 1 ? "order" : "orders"} available. Open activity to view numbers, messages, countdowns, and refunds.` : "Your number orders and received SMS messages will appear here."}</p></div>
+      <div className="number-activity-launcher-action">{rows.length > 0 && <span>{rows.length} {rows.length === 1 ? "order" : "orders"}</span>}<button type="button" onClick={() => setActivityOpen(true)}><Inbox size={16} /> Open Number Activity <ArrowRight size={15} /></button></div>
+    </section>
     <div className="mt-5 grid items-start gap-5 xl:grid-cols-[1.15fr_.85fr]">
       <section className="ui-card p-5 sm:p-6">
         {isRental ? <>
@@ -500,6 +508,27 @@ function ProviderAssignedNumberWorkspace({ mode, socialOnly = false }: { mode: "
         <div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted messaging. Automated account creation and verification bypass are prohibited.</p></div></div>
       </aside>
     </div>
+    {activityOpen && <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="number-activity-title">
+      <button type="button" className="modal-backdrop" onClick={() => setActivityOpen(false)} aria-label="Close number activity" />
+      <section className="modal-card number-activity-modal">
+        <header className="number-details-header">
+          <div className="number-details-heading"><span><Inbox size={20} /></span><div><p className="ui-eyebrow">Number activity</p><h2 id="number-activity-title">{isRental ? "Monthly rentals" : "Temporary number orders"}</h2></div></div>
+          <div className="number-details-header-actions"><span className="number-activity-total">{rows.length}</span><button type="button" onClick={() => setActivityOpen(false)} aria-label="Close number activity"><X size={18} /></button></div>
+        </header>
+        <div className="number-activity-body">
+          {rows.length ? <div className="number-activity-list">{rows.map((item) => {
+            const countdown = smsWaitCountdown(item.expiresAt, clock);
+            const waitLabel = item.refundStatus === "approved" ? "Refunded" : item.refundStatus === "pending_provider" ? "Refund pending" : countdown.label;
+            return <button type="button" key={item.reference} className="number-activity-item" onClick={() => { setActivityOpen(false); void refresh(item, item.kind, true); }} aria-label={`View activity for ${item.phoneNumber || item.serviceName || item.name || item.reference}`}>
+              <span className="number-activity-item-icon">{item.kind === "rental" ? <Clock3 size={19} /> : <Smartphone size={19} />}</span>
+              <span className="number-activity-item-copy"><span className="number-activity-item-title"><strong>{item.phoneNumber || item.serviceName || item.name || "Awaiting number assignment"}</strong><Status value={item.status} /></span><small>{item.serviceName || item.name || (item.kind === "rental" ? "Monthly rental" : "Temporary SMS")}</small><span className="number-activity-item-meta"><b>{money(item.retailPriceMinor)}</b>{item.kind === "one_time" && <em className={countdown.expired ? "is-expired" : ""}><Clock3 size={12} /> {waitLabel}</em>}</span></span>
+              <span className="number-activity-item-arrow"><ChevronRight size={18} /></span>
+            </button>;
+          })}</div> : <EmptyState icon={Smartphone} title={isRental ? "No monthly rentals yet" : "No temporary number orders yet"} copy="Complete a number purchase and it will appear here automatically." />}
+        </div>
+        <footer className="number-details-footer"><p>Select an order to see its number, SMS inbox, code, and refund status.</p><button type="button" onClick={() => setActivityOpen(false)}>Done</button></footer>
+      </section>
+    </div>}
     {detailsOpen && active && <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="number-details-title">
       <button type="button" className="modal-backdrop" onClick={() => setDetailsOpen(false)} aria-label="Close number details" />
       <section className="modal-card number-details-modal">

@@ -67,9 +67,14 @@ test("monthly rentals render recognizable service logos with a safe fallback", a
   assert.match(config, /cdn\.simpleicons\.org/);
 });
 
-test("number activity management opens an accessible SMS details dialog with copy actions", async () => {
+test("number activity uses a visible, scroll-free launcher and accessible popup details", async () => {
   const [workspace, styles] = await Promise.all([read("src/components/dashboard/workspace.tsx"), read("src/app/globals.css")]);
-  assert.match(workspace, /refresh\(item, item\.kind, true\)/);
+  const providerWorkspace = workspace.slice(workspace.indexOf("function ProviderAssignedNumberWorkspace"), workspace.indexOf("function SmsWorkspace"));
+  assert.match(providerWorkspace, /Open Number Activity/);
+  assert.match(providerWorkspace, /number-activity-modal/);
+  assert.match(providerWorkspace, /setActivityOpen\(true\)/);
+  assert.match(providerWorkspace, /refresh\(item, item\.kind, true\)/);
+  assert.doesNotMatch(providerWorkspace, /overflow-x-auto|<table|>Manage</);
   assert.match(workspace, /aria-modal="true"/);
   assert.match(workspace, /SMS and order details/);
   assert.match(workspace, /Verification code/);
@@ -78,6 +83,8 @@ test("number activity management opens an accessible SMS details dialog with cop
   assert.match(workspace, /navigator\.clipboard\.writeText/);
   assert.match(styles, /\.number-details-modal/);
   assert.match(styles, /\.number-message-code/);
+  assert.match(styles, /\.number-activity-launcher/);
+  assert.match(styles, /\.number-activity-list/);
 });
 
 test("social media SMS has a dedicated live BloomSMS catalogue experience", async () => {
