@@ -573,7 +573,30 @@ function SmsWorkspace() {
 }
 
 function SocialSmsWorkspace() {
-  return <ProviderAssignedNumberWorkspace mode="one_time" socialOnly />;
+  const [activeTab, setActiveTab] = useState<"verification" | "digital">("verification");
+  return <>
+    <div className="sms-product-tabs" role="tablist" aria-label="Social SMS services">
+      <button type="button" id="verification-sms-tab" role="tab" aria-selected={activeTab === "verification"} aria-controls="verification-sms-panel" tabIndex={activeTab === "verification" ? 0 : -1} onClick={() => setActiveTab("verification")}>
+        <MessageSquareText size={16} />
+        <span>Verification SMS</span>
+      </button>
+      <button type="button" id="digital-products-tab" role="tab" aria-selected={activeTab === "digital"} aria-controls="digital-products-panel" tabIndex={activeTab === "digital" ? 0 : -1} onClick={() => setActiveTab("digital")}>
+        <Store size={16} />
+        <span>Digital Products</span>
+      </button>
+    </div>
+    <div id="verification-sms-panel" role="tabpanel" aria-labelledby="verification-sms-tab" hidden={activeTab !== "verification"}>
+      <ProviderAssignedNumberWorkspace mode="one_time" socialOnly />
+    </div>
+    <div id="digital-products-panel" role="tabpanel" aria-labelledby="digital-products-tab" hidden={activeTab !== "digital"}>
+      <section className="ui-card digital-products-empty">
+        <span className="digital-products-empty-icon"><Store size={22} /></span>
+        <p className="ui-eyebrow">Digital Products</p>
+        <h2>No products are currently available</h2>
+        <p>Approved products will appear here when they are ready. This catalogue remains empty until each product has been individually verified and approved.</p>
+      </section>
+    </div>
+  </>;
 }
 
 function VtuWorkspace({ type }: { type: "airtime" | "data" | "electricity" }) {
