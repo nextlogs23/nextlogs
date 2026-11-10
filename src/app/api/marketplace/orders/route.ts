@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireUser, routeError } from "@/lib/server/auth";
+import { sendMarketplacePurchaseNotifications } from "@/lib/server/email-notifications";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { stableMarketplaceReference } from "@/lib/server/marketplace";
 import { enforceRateLimit } from "@/lib/server/rate-limit";
@@ -36,7 +37,11 @@ export async function POST(request: NextRequest) {
       const orderRef = db.collection("marketplaceOrders").doc(reference);
       const transactionRef = db.collection("transactions").doc(reference);
       const [productSnapshot, walletSnapshot, ledgerSnapshot, orderSnapshot] = await Promise.all([transaction.get(productRef), transaction.get(walletRef), transaction.get(ledgerRef), transaction.get(orderRef)]);
-      if (ledgerSnapshot.exists && orderSnapshot.exists) return { ...publicOrder(reference, orderSnapshot.data()!), idempotent: true };
+      if (ledgerSnapshot.exists && orderSnapshot.exists) {
+        const existingOrder = orderSnapshot.data()!;
+        const notification = existingOrder.emailNotification as { customer?: { status?: string }; administrator?: { status?: string } } | undefined;
+        return { ...publicOrder(reference, existingOrder), idempotent: true, notificationComplete: notification?.customer?.status === "sent" && notification?.administrator?.status === "sent" };
+      }
       const product = productSnapshot.data();
       if (!productSnapshot.exists || !product?.active) throw Object.assign(new Error("This product is no longer available"), { status: 404 });
       if (!Number.isSafeInteger(product.stock) || product.stock <= 0) throw Object.assign(new Error("This product is currently out of stock"), { status: 409 });
@@ -72,9 +77,21 @@ export async function POST(request: NextRequest) {
       transaction.create(ledgerRef, { userId: user.uid, reference, amountMinor: -priceMinor, kind: "purchase", description: `Marketplace purchase: ${orderTitle}`, balanceAfterMinor: nextBalance, status: "successful", createdAt: FieldValue.serverTimestamp() });
       transaction.create(orderRef, order);
       transaction.create(transactionRef, { reference, userId: user.uid, serviceType: "marketplace", amountMinor: priceMinor, retailPriceMinor: priceMinor, providerCostMinor: product.providerCostMinor ?? null, status, metadata: { productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: product.title, category: product.category }, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-      return { reference, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, status, fulfillment: product.fulfillment, deliveryUrl: instant && !downloadFile && !deliveryText ? product.deliveryUrl : null, deliveryText, downloadUrl: downloadFile ? `/api/marketplace/orders/${encodeURIComponent(reference)}/download` : null, idempotent: false };
+      return { reference, productId: input.productId, optionId: selectedOption?.id || null, optionTitle, title: orderTitle, category: product.category, kind: product.kind, priceMinor, status, fulfillment: product.fulfillment, deliveryUrl: instant && !downloadFile && !deliveryText ? product.deliveryUrl : null, deliveryText, downloadUrl: downloadFile ? `/api/marketplace/orders/${encodeURIComponent(reference)}/download` : null, idempotent: false, notificationComplete: false };
     });
-    return Response.json(result);
+    if (!result.notificationComplete) {
+      const notification = await sendMarketplacePurchaseNotifications({
+        reference: String(result.reference), amountMinor: Number(result.priceMinor), productTitle: String(result.title),
+        status: String(result.status), customerEmail: user.email, customerName: user.displayName,
+      });
+      await db.collection("marketplaceOrders").doc(reference).set({
+        emailNotification: { ...notification, attemptedAt: FieldValue.serverTimestamp() },
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true }).catch(() => undefined);
+    }
+    const publicResult: Record<string, unknown> = { ...result };
+    delete publicResult.notificationComplete;
+    return Response.json(publicResult);
   } catch (error) {
     if (error instanceof z.ZodError) return routeError(Object.assign(new Error("Invalid marketplace purchase request"), { status: 400 }));
     return routeError(error);
