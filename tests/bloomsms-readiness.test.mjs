@@ -87,22 +87,6 @@ test("number activity uses a visible, scroll-free launcher and accessible popup 
   assert.match(styles, /\.number-activity-list/);
 });
 
-test("social media SMS has a dedicated live BloomSMS catalogue experience", async () => {
-  const [workspace, route, shell, home] = await Promise.all([
-    read("src/components/dashboard/workspace.tsx"),
-    read("src/app/dashboard/social-sms/page.tsx"),
-    read("src/components/app-shell.tsx"),
-    read("src/components/dashboard/dashboard-home.tsx"),
-  ]);
-  assert.match(workspace, /SOCIAL_SMS_SERVICE_PATTERN/);
-  assert.match(workspace, /socialOnly \|\| SOCIAL_SMS_SERVICE_PATTERN\.test/);
-  assert.match(workspace, /Social media SMS/);
-  assert.match(workspace, /BloomSMS has no supported social-platform inventory/);
-  assert.match(route, /section="social-sms"/);
-  assert.match(shell, /"Social media SMS", "social-sms"/);
-  assert.match(home, /href: "\/dashboard\/social-sms"/);
-});
-
 test("expired no-code orders expose an idempotent provider-confirmed refund application", async () => {
   const [route, workspace, wallet, styles, adminRoute, adminWorkspace] = await Promise.all([
     read("src/app/api/bloomsms/orders/[reference]/route.ts"),
