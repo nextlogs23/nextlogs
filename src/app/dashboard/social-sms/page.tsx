@@ -1,5 +1,5 @@
-import { CustomerWorkspace } from "@/components/dashboard/workspace";
+import { notFound } from "next/navigation";
 
 export default function Page() {
-  return <CustomerWorkspace section="social-sms" />;
+  notFound();
 }

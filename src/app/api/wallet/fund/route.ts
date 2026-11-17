@@ -5,7 +5,7 @@ import { requireUser, routeError } from "@/lib/server/auth";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { reference } from "@/lib/server/references";
 import { enforceRateLimit } from "@/lib/server/rate-limit";
-import { createPaymonetraPayment, PaymonetraError, paymonetraMode } from "@/lib/server/paymonetra";
+import { createPocketFiPayment, PocketFiError, pocketFiMode } from "@/lib/server/pocketfi";
 
 const schema = z.object({ amountMinor: z.number().int().min(10_000).max(100_000_000) });
 const CANONICAL_APP_ORIGIN = "https://www.nextlogs.online";
@@ -33,37 +33,39 @@ export async function POST(request: NextRequest) {
     const { amountMinor } = schema.parse(await request.json());
     const fundingReference = reference("NXL-FUND");
     intentRef = adminDb().collection("walletFundingIntents").doc(fundingReference);
+    const profile = await adminDb().collection("users").doc(user.uid).get();
+    const phone = String(profile.data()?.phone || "").trim();
+    if (!/^\+?[0-9]{10,15}$/.test(phone.replace(/[\s()-]/g, ""))) throw Object.assign(new Error("Add a valid phone number to your account before funding your wallet."), { status: 400 });
     await intentRef.create({
       reference: fundingReference,
       userId: user.uid,
       email: user.email,
       amountMinor,
-      provider: "paymonetra",
-      mode: paymonetraMode(),
+      provider: "pocketfi",
+      mode: pocketFiMode(),
       status: "initializing",
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    const payment = await createPaymonetraPayment({
+    const payment = await createPocketFiPayment({
       amountMinor,
-      reference: fundingReference,
-      description: "Nextlogs wallet funding",
       customerName: user.displayName || user.email.split("@")[0] || "Nextlogs customer",
       customerEmail: user.email,
+      customerPhone: phone.replace(/[\s()-]/g, ""),
       redirectUrl: checkoutReturnUrl(request),
     });
-    if (!payment.reference || !payment.checkout_url) throw Object.assign(new Error("The payment gateway returned an incomplete checkout"), { status: 502 });
+    if (!payment.payment_id || !payment.payment_link) throw Object.assign(new Error("PocketFi returned an incomplete checkout"), { status: 502 });
 
     await intentRef.set({
-      providerReference: payment.reference,
+      providerReference: payment.payment_id,
       providerStatus: payment.status || "pending",
       status: "pending",
       checkoutCreatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    return Response.json({ reference: fundingReference, authorizationUrl: payment.checkout_url });
+    return Response.json({ reference: fundingReference, authorizationUrl: payment.payment_link });
   } catch (error) {
     if (intentRef) {
-      const providerError = error as PaymonetraError;
+      const providerError = error as PocketFiError;
       await intentRef.set({
         status: providerError.outcomeKnown ? "failed" : "initialization_unknown",
         lastError: providerError.message || "Payment initialization failed",

@@ -40,7 +40,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 type NavItem = readonly [string, string, typeof Gauge];
 
 const customerNav: NavItem[] = [
-  ["Overview", "", Gauge], ["Marketplace", "marketplace", Store], ["Email Flashing", "email-flashing", Mail], ["SMS verification", "sms", Shield], ["Social media SMS", "social-sms", MessageSquareText], ["Buy airtime", "airtime", PhoneCall],
+  ["Overview", "", Gauge], ["Marketplace", "marketplace", Store], ["Email Flashing", "email-flashing", Mail], ["SMS verification", "sms", Shield], ["Buy airtime", "airtime", PhoneCall],
   ["Buy data", "data", Smartphone], ["Electricity bills", "electricity", Bolt], ["Cable TV", "cable", Tv], ["Fund wallet", "wallet", WalletCards],
   ["Transactions", "transactions", CreditCard], ["Notifications", "notifications", Bell], ["Profile", "profile", UserRound], ["Support", "support", CircleHelp],
 ];

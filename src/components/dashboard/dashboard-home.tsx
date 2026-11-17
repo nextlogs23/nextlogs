@@ -10,13 +10,12 @@ type Transaction = { id: string; reference?: string; serviceType?: string; amoun
 const money = (minor = 0) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(minor / 100);
 const services = [
   { name: "SMS verification", copy: "Receive real provider messages", href: "/dashboard/sms", icon: MessageSquareText, color: "sky" },
-  { name: "Social media SMS", copy: "Browse live social-platform services", href: "/dashboard/social-sms", icon: MessageSquareText, color: "blue" },
   { name: "Buy airtime", copy: "Recharge supported networks", href: "/dashboard/airtime", icon: PhoneCall, color: "blue" },
   { name: "Buy data", copy: "Browse live data bundles", href: "/dashboard/data", icon: Wifi, color: "cyan" },
   { name: "Electricity bills", copy: "Validate and pay your meter", href: "/dashboard/electricity", icon: Bolt, color: "amber" },
   { name: "Cable TV", copy: "Verify and renew a subscription", href: "/dashboard/cable", icon: Tv, color: "violet" },
   { name: "Digital marketplace", copy: "Browse available products", href: "/dashboard/marketplace", icon: Store, color: "violet" },
-  { name: "Wallet funding", copy: "Add funds through Paymonetra", href: "/dashboard/wallet", icon: WalletCards, color: "emerald" },
+  { name: "Wallet funding", copy: "Add funds through PocketFi", href: "/dashboard/wallet", icon: WalletCards, color: "emerald" },
 ] as const;
 
 function dateText(value: Transaction["createdAt"]) {

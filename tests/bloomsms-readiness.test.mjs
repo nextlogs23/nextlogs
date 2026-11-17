@@ -80,20 +80,18 @@ test("number activity management opens an accessible SMS details dialog with cop
   assert.match(styles, /\.number-message-code/);
 });
 
-test("social media SMS has a dedicated live BloomSMS catalogue experience", async () => {
+test("social media SMS customer section is removed while provider safeguards remain covered", async () => {
   const [workspace, route, shell, home] = await Promise.all([
     read("src/components/dashboard/workspace.tsx"),
     read("src/app/dashboard/social-sms/page.tsx"),
     read("src/components/app-shell.tsx"),
     read("src/components/dashboard/dashboard-home.tsx"),
   ]);
-  assert.match(workspace, /SOCIAL_SMS_SERVICE_PATTERN/);
-  assert.match(workspace, /socialOnly \|\| SOCIAL_SMS_SERVICE_PATTERN\.test/);
-  assert.match(workspace, /Social media SMS/);
-  assert.match(workspace, /BloomSMS has no supported social-platform inventory/);
-  assert.match(route, /section="social-sms"/);
-  assert.match(shell, /"Social media SMS", "social-sms"/);
-  assert.match(home, /href: "\/dashboard\/social-sms"/);
+  assert.doesNotMatch(workspace, /SocialSmsWorkspace/);
+  assert.doesNotMatch(workspace, /section === "social-sms"/);
+  assert.match(route, /notFound/);
+  assert.doesNotMatch(shell, /"Social media SMS", "social-sms"/);
+  assert.doesNotMatch(home, /href: "\/dashboard\/social-sms"/);
 });
 
 test("expired no-code orders expose an idempotent provider-confirmed refund application", async () => {
