@@ -7,7 +7,7 @@ import { reference } from "@/lib/server/references";
 import { enforceRateLimit } from "@/lib/server/rate-limit";
 import { createPocketFiPayment, PocketFiError, pocketFiMode } from "@/lib/server/pocketfi";
 
-const schema = z.object({ amountMinor: z.number().int().min(10_000).max(100_000_000) });
+const schema = z.object({ amountMinor: z.number().int().min(10_000).max(100_000_000), phone: z.string().trim().min(10).max(24) });
 const CANONICAL_APP_ORIGIN = "https://www.nextlogs.online";
 
 function checkoutReturnUrl(request: NextRequest) {
@@ -30,12 +30,11 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireUser(request);
     await enforceRateLimit(`fund_${user.uid}`, 8, 60 * 60 * 1000);
-    const { amountMinor } = schema.parse(await request.json());
+    const { amountMinor, phone: submittedPhone } = schema.parse(await request.json());
+    const phone = submittedPhone.replace(/[\s()-]/g, "");
+    if (!/^\+?[0-9]{10,15}$/.test(phone)) throw Object.assign(new Error("Enter a valid phone number for PocketFi checkout."), { status: 400 });
     const fundingReference = reference("NXL-FUND");
     intentRef = adminDb().collection("walletFundingIntents").doc(fundingReference);
-    const profile = await adminDb().collection("users").doc(user.uid).get();
-    const phone = String(profile.data()?.phone || "").trim();
-    if (!/^\+?[0-9]{10,15}$/.test(phone.replace(/[\s()-]/g, ""))) throw Object.assign(new Error("Add a valid phone number to your account before funding your wallet."), { status: 400 });
     await intentRef.create({
       reference: fundingReference,
       userId: user.uid,
