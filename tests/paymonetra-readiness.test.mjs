@@ -10,6 +10,7 @@ test("PocketFi credentials remain server-only and sandbox/live URLs are explicit
   const workspace = read("src/components/dashboard/workspace.tsx");
   assert.match(env, /POCKETFI_API_TOKEN=/);
   assert.match(env, /POCKETFI_BUSINESS_ID=/);
+  assert.match(env, /POCKETFI_SECRET_KEY=/);
   assert.match(env, /POCKETFI_API_URL=https:\/\/api\.pocketfi\.ng\/api\/test/);
   assert.match(provider, /import "server-only"/);
   assert.match(provider, /https:\/\/api\.pocketfi\.ng\/api\/v1/);
@@ -56,6 +57,7 @@ test("PocketFi webhook verifies raw-body HMAC-SHA512 signatures and supports dup
   assert.match(webhook, /createHmac\("sha512", secret\)\.update\(raw\)/);
   assert.match(webhook, /timingSafeEqual/);
   assert.match(webhook, /http_pocketfi_signature/);
+  assert.match(webhook, /POCKETFI_SECRET_KEY/);
   assert.match(webhook, /settlePocketFiFunding/);
   assert.match(settlement, /if \(intent\.status === "successful"\)/);
   assert.match(settlement, /status: "successful"/);

@@ -10,7 +10,7 @@ function validSignature(raw: Buffer, supplied: string, secret: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.POCKETFI_API_TOKEN?.trim();
+  const secret = process.env.POCKETFI_SECRET_KEY?.trim();
   if (!secret) return new Response("Not configured", { status: 503 });
   const raw = Buffer.from(await request.arrayBuffer());
   const signature = request.headers.get("http_pocketfi_signature") || request.headers.get("HTTP_POCKETFI_SIGNATURE") || "";
