@@ -239,7 +239,15 @@ export class VtugateProvider implements VtuProvider {
     return responseStatus(await this.client.post(path, body), input.reference, requestedMinor);
   }
 
-  async requery(reference: string) { return responseStatus(await this.client.post("transactionstatus", { client_reference: reference, requery: true }), reference); }
+  async requery(reference: string, providerReference?: string) {
+    const providerId = str(providerReference);
+    const lookup = providerId && /^\d+$/.test(providerId)
+      ? { transaction_id: providerId }
+      : providerId
+        ? { external_reference: providerId }
+        : {};
+    return responseStatus(await this.client.post("transactionstatus", { ...lookup, client_reference: reference, requery: true }), reference);
+  }
 }
 
 export function newVtuReference() { return `${Date.now()}${randomBytes(6).toString("hex")}`; }
