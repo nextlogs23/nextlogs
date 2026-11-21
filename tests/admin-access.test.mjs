@@ -27,3 +27,17 @@ test("new Firebase users receive a Firestore profile and wallet before protected
   assert.match(bootstrap, /requireFirebaseUser\(req\)/);
   assert.doesNotMatch(bootstrap, /requireUser\(req\)/);
 });
+
+test("admin users data stays protected and includes wallet credit/debit details", () => {
+  const route = read("src/app/api/admin/users/route.ts");
+  const workspace = read("src/components/admin/admin-workspace.tsx");
+  assert.match(route, /requireAdmin\(request\)/);
+  assert.match(route, /collection\("users"\)/);
+  assert.match(route, /collection\("walletTransactions"\)/);
+  assert.match(route, /creditsMinor/);
+  assert.match(route, /debitsMinor/);
+  assert.match(workspace, /\/api\/admin\/users/);
+  assert.match(workspace, /Total credits/);
+  assert.match(workspace, /Total debits/);
+  assert.match(workspace, /Email/);
+});
