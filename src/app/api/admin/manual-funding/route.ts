@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin, routeError } from "@/lib/server/auth";
+import { sendWalletFundingNotifications } from "@/lib/server/email-notifications";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { getManualFundingSettings } from "@/lib/server/manual-funding";
 
@@ -50,13 +51,14 @@ export async function PATCH(request: NextRequest) {
       return Response.json({ updated: true, status: "rejected" });
     }
 
-    await db.runTransaction(async (transaction) => {
+    const approvedFunding = await db.runTransaction(async (transaction) => {
       const requestSnapshot = await transaction.get(requestRef); const funding = requestSnapshot.data();
       if (!requestSnapshot.exists) throw Object.assign(new Error("Funding request not found"), { status: 404 });
       if (!funding?.userId || !Number.isSafeInteger(funding.amountMinor) || funding.amountMinor <= 0) throw new Error("Funding request is invalid");
       const walletRef = db.collection("wallets").doc(funding.userId); const ledgerRef = db.collection("walletTransactions").doc(`credit_${input.reference}`);
       const [walletSnapshot, ledgerSnapshot] = await Promise.all([transaction.get(walletRef), transaction.get(ledgerRef)]);
-      if (funding.status === "approved" && ledgerSnapshot.exists) return;
+      const notification = funding.fundingEmailNotification as { customer?: { status?: string }; administrator?: { status?: string } } | undefined;
+      if (funding.status === "approved" && ledgerSnapshot.exists) return { userId: funding.userId as string, userEmail: String(funding.userEmail || ""), customerName: String(funding.depositorName || ""), amountMinor: funding.amountMinor as number, notificationComplete: notification?.customer?.status === "sent" && notification?.administrator?.status === "sent" };
       if (funding.status !== "pending") throw Object.assign(new Error("Only pending requests can be approved"), { status: 409 });
       const current = walletSnapshot.data()?.balanceMinor ?? 0; const next = current + funding.amountMinor;
       if (!Number.isSafeInteger(current) || !Number.isSafeInteger(next)) throw new Error("Wallet balance is invalid");
@@ -64,7 +66,23 @@ export async function PATCH(request: NextRequest) {
       transaction.create(ledgerRef, { userId: funding.userId, reference: `credit_${input.reference}`, amountMinor: funding.amountMinor, kind: "deposit", description: "Approved bank-transfer wallet funding", providerReference: input.reference, balanceAfterMinor: next, status: "successful", actorUid: admin.uid, reason: input.reason, createdAt: FieldValue.serverTimestamp() });
       transaction.update(requestRef, { status: "approved", reviewReason: input.reason, walletCreditReference: `credit_${input.reference}`, reviewedBy: admin.uid, reviewedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
       transaction.create(auditRef, { actorUid: admin.uid, action: "manual_funding_approved", target: input.reference, reason: input.reason, userId: funding.userId, amountMinor: funding.amountMinor, createdAt: FieldValue.serverTimestamp() });
+      return { userId: funding.userId as string, userEmail: String(funding.userEmail || ""), customerName: String(funding.depositorName || ""), amountMinor: funding.amountMinor as number, notificationComplete: false };
     });
+    if (!approvedFunding.notificationComplete) {
+      try {
+        let customerEmail = approvedFunding.userEmail;
+        let customerName = approvedFunding.customerName;
+        if (!customerEmail || !customerName) {
+          const profile = (await db.collection("users").doc(approvedFunding.userId).get()).data();
+          customerEmail ||= typeof profile?.email === "string" ? profile.email : "";
+          customerName ||= typeof profile?.displayName === "string" ? profile.displayName : "";
+        }
+        const notification = await sendWalletFundingNotifications({ reference: input.reference, amountMinor: approvedFunding.amountMinor, customerEmail, customerName, method: "Manual bank transfer" });
+        await requestRef.set({ fundingEmailNotification: { ...notification, attemptedAt: FieldValue.serverTimestamp() }, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => undefined);
+      } catch {
+        // Funding approval remains successful even if the notification provider is unavailable.
+      }
+    }
     return Response.json({ updated: true, status: "approved" });
   } catch (error) {
     if (error instanceof z.ZodError) return routeError(Object.assign(new Error(error.issues[0]?.message || "Check the funding settings"), { status: 400 }));

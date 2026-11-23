@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       reference: fundingReference,
       userId: user.uid,
       email: user.email,
+      customerName: user.displayName || user.email.split("@")[0] || "Nextlogs customer",
       amountMinor,
       provider: "pocketfi",
       mode: pocketFiMode(),

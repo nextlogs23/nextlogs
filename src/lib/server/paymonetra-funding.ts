@@ -1,6 +1,7 @@
 import "server-only";
 
-import { FieldValue } from "firebase-admin/firestore";
+import { DocumentReference, FieldValue } from "firebase-admin/firestore";
+import { sendWalletFundingNotifications } from "./email-notifications";
 import { adminDb } from "./firebase-admin";
 import { getPaymonetraPayment, paymonetraMode } from "./paymonetra";
 import { applyWalletEntry } from "./wallet";
@@ -11,9 +12,31 @@ type FundingIntent = {
   amountMinor: number;
   provider?: string;
   providerReference?: string | null;
+  email?: string;
+  customerName?: string;
   status?: string;
+  emailNotification?: { customer?: { status?: string }; administrator?: { status?: string } };
   createdAt?: { toMillis?: () => number } | null;
 };
+
+async function notifySuccessfulFunding(intentRef: DocumentReference, intent: FundingIntent) {
+  if (intent.emailNotification?.customer?.status === "sent" && intent.emailNotification?.administrator?.status === "sent") return;
+  try {
+    let customerEmail = intent.email?.trim() || "";
+    let customerName = intent.customerName?.trim() || "";
+    if (!customerEmail || !customerName) {
+      const profile = (await adminDb().collection("users").doc(intent.userId).get()).data();
+      customerEmail ||= typeof profile?.email === "string" ? profile.email.trim() : "";
+      customerName ||= typeof profile?.displayName === "string" ? profile.displayName.trim() : "";
+    }
+    const notification = await sendWalletFundingNotifications({
+      reference: intent.reference, amountMinor: intent.amountMinor, customerEmail, customerName, method: "Paymonetra payment",
+    });
+    await intentRef.set({ emailNotification: { ...notification, attemptedAt: FieldValue.serverTimestamp() }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  } catch {
+    // The confirmed wallet credit must never be rolled back because an email provider is unavailable.
+  }
+}
 
 function nairaAsMinor(value: unknown) {
   const amount = typeof value === "number" ? value : Number(value);
@@ -36,7 +59,10 @@ export async function settlePaymonetraFunding(input: {
   const intentRef = match.docs[0].ref;
   const intent = match.docs[0].data() as FundingIntent;
   if (input.expectedUserId && intent.userId !== input.expectedUserId) throw Object.assign(new Error("Payment not found"), { status: 404 });
-  if (intent.status === "successful") return { status: "successful" as const, reference: intent.reference, idempotent: true };
+  if (intent.status === "successful") {
+    await notifySuccessfulFunding(intentRef, intent);
+    return { status: "successful" as const, reference: intent.reference, idempotent: true };
+  }
 
   const payment = await getPaymonetraPayment(input.providerReference);
   const amountRequested = nairaAsMinor(payment.amount_requested ?? payment.amount);
@@ -84,6 +110,7 @@ export async function settlePaymonetraFunding(input: {
     verificationFailure: FieldValue.delete(),
     verifiedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  await notifySuccessfulFunding(intentRef, { ...intent, status: "successful" });
   return { status: "successful" as const, reference: intent.reference, idempotent: result.idempotent };
 }
 
