@@ -293,6 +293,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
   const [purchaseAttempt, setPurchaseAttempt] = useState<{ offerId: string; idempotencyKey: string } | null>(null);
   const [query, setQuery] = useState("");
   const [serviceQuery, setServiceQuery] = useState("");
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
 
   useEffect(() => {
     const historyRequest = isRental
@@ -332,6 +333,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
     setOffers([]);
     setSelected(null);
     setPurchaseAttempt(null);
+    setServiceModalOpen(true);
     setLoading(true);
     try {
       const data = await api<{ services: SmsPoolService[] }>(`/api/bloomsms/catalog?country=${encodeURIComponent(item.id)}`);
@@ -346,6 +348,7 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
   async function chooseService(item: SmsPoolService) {
     if (!country) return;
     setService(item);
+    setServiceModalOpen(false);
     setSelected(null);
     setPurchaseAttempt(null);
     setLoading(true);
@@ -502,7 +505,6 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
           <div className="country-grid country-list-scroll">{filteredCountries.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseCountry(item)} className={country?.id === item.id ? "is-selected" : ""}>
             <span className="country-flag">{countryCode(item) === "US" ? <Image src="/flags/us.svg" width={40} height={30} alt="United States flag" /> : countryCode(item) ? <Image src={`https://flagcdn.com/w40/${countryCode(item)?.toLowerCase()}.png`} width={40} height={30} alt={`${item.name} flag`} unoptimized /> : <Globe2 size={19} aria-label="Country flag unavailable" />}</span><div><b>{countryCode(item) === "US" ? "United States" : item.name}</b><small>{countryCode(item) ? `ISO ${countryCode(item)}` : item.region}</small></div>{country?.id === item.id && <Check size={14} />}
           </button>)}</div>
-          {country && <><div className="workspace-divider" /><div className="workspace-card-title"><span>02</span><div><h2>Select service</h2><p>Only permitted destination services are shown.</p></div></div><label className="country-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label>{filteredServices.length ? <div className="sms-service-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={MessageSquareText} title="No services available" copy="No supported services are available for this country right now. Try another country." />}</>}
           {service && <><div className="workspace-divider" /><div className="workspace-card-title"><span>03</span><div><h2>Availability and price</h2><p>Select a live inventory pool.</p></div></div>{loading ? <div className="service-skeleton-grid"><div /><div /></div> : offers.length ? <div className="sms-service-grid">{offers.map((offer) => <button type="button" key={offer.id} onClick={() => { setSelected(offer); setPurchaseAttempt(null); }} className={selected?.id === offer.id ? "is-selected" : ""}><span><Globe2 size={18} /></span><div><b>{offer.poolName}</b><small>{money(offer.retailPriceMinor)} · {offer.stock > 0 ? `${offer.stock} available` : "Live stock"}</small></div>{selected?.id === offer.id && <Check size={14} />}</button>)}</div> : <EmptyState icon={Globe2} title="No live stock" copy="Try a different service or country." />}</>}
         </>}
       </section>
@@ -514,6 +516,13 @@ function ProviderAssignedNumberWorkspace({ mode }: { mode: "one_time" | "rental"
         <div className="compliance-note"><ShieldCheck size={18} /><div><b>Provider restrictions apply</b><p>Use only for lawful, provider-permitted messaging. Automated account creation and verification bypass are prohibited.</p></div></div>
       </aside>
     </div>
+    {serviceModalOpen && !isRental && <div className="modal-layer sms-service-modal-layer" role="dialog" aria-modal="true" aria-labelledby="bloom-service-modal-title">
+      <button type="button" className="modal-backdrop" onClick={() => setServiceModalOpen(false)} aria-label="Close service selection" />
+      <section className="modal-card sms-service-modal">
+        <div className="sms-service-modal-head"><div><p className="ui-eyebrow">Step 02 · {country?.name || "Country"}</p><h2 id="bloom-service-modal-title">Select a service</h2><p>Choose a permitted service from the live catalogue.</p></div><button type="button" onClick={() => setServiceModalOpen(false)} className="table-filter" aria-label="Close service selection"><X size={16} /></button></div>
+        {loading ? <div className="sms-service-modal-loading"><LoaderCircle className="animate-spin" size={24} /><b>Loading available services…</b><span>Checking live provider availability.</span></div> : filteredServices.length ? <><label className="country-search sms-service-modal-search"><Search size={15} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" /></label><div className="sms-service-modal-grid">{filteredServices.slice(0, 60).map((item) => <button type="button" key={item.id} onClick={() => void chooseService(item)} className={service?.id === item.id ? "is-selected" : ""}><span><MessageSquareText size={18} /></span><div><b>{item.name}</b><small>Verification service</small></div>{service?.id === item.id && <Check size={14} />}</button>)}</div></> : <EmptyState icon={MessageSquareText} title="No services available" copy="No supported services are available for this country right now. Try another country." />}
+      </section>
+    </div>}
     {activityOpen && <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="number-activity-title">
       <button type="button" className="modal-backdrop" onClick={() => setActivityOpen(false)} aria-label="Close number activity" />
       <section className="modal-card number-activity-modal">
